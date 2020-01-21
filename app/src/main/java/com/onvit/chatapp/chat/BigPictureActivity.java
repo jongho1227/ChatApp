@@ -103,7 +103,7 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
         if(uri.equals("noImg")){
             Glide.with(this).load(R.drawable.standard_profile).apply(new RequestOptions().fitCenter()).into(imageView);
         }else{
-            Glide.with(this).load(uri).apply(new RequestOptions().fitCenter()).into(imageView);
+            Glide.with(this).load(uri).placeholder(R.drawable.ic_base_img_24dp).apply(new RequestOptions().fitCenter()).into(imageView);
         }
         downImg.setOnClickListener(new View.OnClickListener() {
             @Override

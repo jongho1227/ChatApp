@@ -58,7 +58,7 @@
             android:textSize="17dp"
             android:layout_marginEnd="5dp"
             android:padding="3dp"
-            android:text="공지사항등록"/>
+            android:text="등록완료"/>
     </LinearLayout>
     <LinearLayout
         android:id="@+id/layout_time"
@@ -78,15 +78,15 @@
             android:textSize="18dp"
             android:textColor="#353535"
             android:layout_height="wrap_content"/>
-       <TextView
-           android:id="@+id/text_time"
-           android:layout_width="0dp"
-           android:layout_weight="0.4"
-           android:gravity="end"
-           android:layout_height="wrap_content"
-           android:hint="2020년 1월 09일"
-           android:textSize="18dp"
-           android:textColor="#353535" />
+        <TextView
+            android:id="@+id/text_time"
+            android:layout_width="0dp"
+            android:layout_weight="0.4"
+            android:gravity="end"
+            android:layout_height="wrap_content"
+            android:hint="2020년 1월 09일"
+            android:textSize="18dp"
+            android:textColor="#353535" />
     </LinearLayout>
 
     <LinearLayout
@@ -105,14 +105,6 @@
             android:padding="10dp"
             android:scrollHorizontally="false"
             android:textSize="18dp" />
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="0.05"
-            android:text="첨부한 사진파일"
-            android:gravity="center"
-            android:textColor="@color/black"
-            android:textSize="18dp"/>
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/notice_recyclerView"
             android:layout_width="match_parent"

@@ -10,7 +10,7 @@
         android:title="연락처"/>
     <item
         android:id="@+id/action_chat"
-        android:icon="@drawable/loading_icon"
+        android:icon="@drawable/ic_chat_black_24dp"
         android:title="채팅방"/>
     <item
         android:id="@+id/action_account"

@@ -74,6 +74,7 @@ public class SignUpActivity extends AppCompatActivity {
     private Uri imageUri;
     private User user;
     private String filePath;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -115,23 +116,20 @@ public class SignUpActivity extends AppCompatActivity {
 
 
         if (getIntent().getParcelableExtra("modify") == null) {
-//            final User joinUser = getIntent().getParcelableExtra("user");
-//            grade.setText(joinUser.getGrade());
-//            name.setText(joinUser.getUserName());
-//            tel.setText(joinUser.getTel());
-//            email.setText(joinUser.getUserEmail());
-//            hospital.setText(joinUser.getHospital());
-//            grade.setFocusable(false);
-//            grade.setClickable(false);
-//            name.setFocusable(false);
-//            name.setClickable(false);
-//            tel.setFocusable(false);
-//            tel.setClickable(false);
-//            hospital.setFocusable(false);
-//            hospital.setClickable(false);
-            grade.setText("임원");
+            final User joinUser = getIntent().getParcelableExtra("user");
+            grade.setText(joinUser.getGrade());
+            name.setText(joinUser.getUserName());
+            tel.setText(joinUser.getTel());
+            email.setText(joinUser.getUserEmail());
+            hospital.setText(joinUser.getHospital());
             grade.setFocusable(false);
             grade.setClickable(false);
+            name.setFocusable(false);
+            name.setClickable(false);
+            tel.setFocusable(false);
+            tel.setClickable(false);
+            hospital.setFocusable(false);
+            hospital.setClickable(false);
             signup.setText("회원가입");
             password.setOnEditorActionListener(new TextView.OnEditorActionListener() { // 완료눌러도 회원가입기능되게~
                 @Override
@@ -174,8 +172,8 @@ public class SignUpActivity extends AppCompatActivity {
             tel.setClickable(false);
             hospital.setFocusable(false);
             hospital.setClickable(false);
+            password.setText("profileUpdate");
             tPassword.setVisibility(View.GONE);
-            password.setText(user.getUserPassword());
             signup.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -206,7 +204,7 @@ public class SignUpActivity extends AppCompatActivity {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            int orientation  = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
             Bitmap newBitmap = rotateBitmap(bitmap, orientation);
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -250,7 +248,6 @@ public class SignUpActivity extends AppCompatActivity {
         modifyUser.setUid(user.getUid());
         modifyUser.setUserEmail(user.getUserEmail());
         modifyUser.setUserName(name.getText().toString());
-        modifyUser.setUserPassword(user.getUserPassword());
         modifyUser.setUserProfileImageUrl(imageUri);
         modifyUser.setGrade(grade.getText().toString());
         map.put(user.getUid(), modifyUser);
@@ -258,10 +255,10 @@ public class SignUpActivity extends AppCompatActivity {
             @Override
             public void onSuccess(Void aVoid) {
                 Map<String, Object> map = new HashMap<>();
-                if(modifyUser.getGrade().equals("임원")){
+                if (modifyUser.getGrade().equals("임원")) {
                     map.put("normalChat/userInfo/" + user.getUid(), modifyUser);
                     map.put("officerChat/userInfo/" + user.getUid(), modifyUser);
-                }else{
+                } else {
                     map.put("normalChat/userInfo/" + user.getUid(), modifyUser);
                 }
 
@@ -334,7 +331,6 @@ public class SignUpActivity extends AppCompatActivity {
                         signUser.setGrade(grade.getText().toString());
                         signUser.setTel(tel.getText().toString());
                         signUser.setUserEmail(email.getText().toString());
-                        signUser.setUserPassword(password.getText().toString());
                         signUser.setPushToken("");
                         signUser.setUid(uid);
 
@@ -345,12 +341,13 @@ public class SignUpActivity extends AppCompatActivity {
                         if (imageUri != null) {
                             Bitmap bitmap = resize(SignUpActivity.this, imageUri, 500);
                             ExifInterface exif = null;
+                            Log.d("이미지파일", filePath);
                             try {
                                 exif = new ExifInterface(filePath);
                             } catch (IOException e) {
                                 e.printStackTrace();
                             }
-                            int orientation  = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                            int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
                             Bitmap newBitmap = rotateBitmap(bitmap, orientation);
 
                             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -392,26 +389,26 @@ public class SignUpActivity extends AppCompatActivity {
                                 PreferenceManager.setString(SignUpActivity.this, "hospital", user.getHospital());
                                 PreferenceManager.setString(SignUpActivity.this, "phone", user.getTel());
                                 PreferenceManager.setString(SignUpActivity.this, "uid", user.getUid());
-                                PreferenceManager.setString(SignUpActivity.this, "grade", user.getGrade());
+//                                PreferenceManager.setString(SignUpActivity.this, "grade", user.getGrade());
 
                                 Map<String, Object> map = new HashMap<>();
                                 Map<String, Object> map2 = new HashMap<>();
                                 //각각의 그룹채팅방에 유저 정보 / 접속여부를 넣음
-                                if(user.getGrade().equals("임원")){
+                                if (user.getGrade().equals("임원")) {
                                     map.put("normalChat/userInfo/" + uid, user);
                                     map.put("officerChat/userInfo/" + uid, user);
                                     map.put("normalChat/users/" + uid, false);
                                     map.put("officerChat/users/" + uid, false);
-                                    map2.put("normalChat/chatName", "일반채팅방");
+                                    map2.put("normalChat/chatName", "회원채팅방");
                                     map2.put("officerChat/chatName", "임원채팅방");
                                     map2.put("normalChat/users/" + uid, 0);
                                     map2.put("officerChat/users/" + uid, 0);
                                     map2.put("normalChat/existUsers/" + uid, true);
                                     map2.put("officerChat/existUsers/" + uid, true);
-                                }else{
+                                } else {
                                     map.put("normalChat/userInfo/" + uid, user);
                                     map.put("normalChat/users/" + uid, false);
-                                    map2.put("normalChat/chatName", "일반채팅방");
+                                    map2.put("normalChat/chatName", "회원채팅방");
                                     map2.put("normalChat/users/" + uid, 0);
                                     map2.put("normalChat/existUsers/" + uid, true);
                                 }
@@ -425,7 +422,8 @@ public class SignUpActivity extends AppCompatActivity {
                                 builder.setMessage("회원가입완료").setPositiveButton("확인", new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialogInterface, int i) {
-                                        Intent intent = new Intent(SignUpActivity.this, SplashActivity.class);
+                                        Intent intent = new Intent(SignUpActivity.this, MainActivity.class);
+                                        intent.putExtra("user", user);
                                         startActivity(intent);
                                         finish();
                                     }
@@ -541,23 +539,22 @@ public class SignUpActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             imageUri = data.getData();//이미지 경로 원본
             Log.d("이미지 경로", imageUri.toString());
+            profileImageView.setImageURI(imageUri);
             filePath = getRealPathFromURI(imageUri);
-            if(filePath==null){
+            if (filePath == null) {
                 Toast.makeText(SignUpActivity.this, "지원하지 않는 이미지 형식입니다.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            Log.d("이미지 경로", filePath);
-            profileImageView.setImageURI(data.getData()); // 회원가입에 있는 이미지뷰를 바꿈
         }
     }
 
     private String getRealPathFromURI(Uri fileUri) {
         String result;
-        String []proj = {MediaStore.Images.Media.DATA};
-        Cursor cursor = getContentResolver().query(fileUri, proj, null,null,null);
-        if(cursor==null){
+        String[] proj = {MediaStore.Images.Media.DATA};
+        Cursor cursor = getContentResolver().query(fileUri, proj, null, null, null);
+        if (cursor == null) {
             result = fileUri.getPath();
-        }else{
+        } else {
             cursor.moveToFirst();
             int idx = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
             result = cursor.getString(idx);
@@ -602,19 +599,18 @@ public class SignUpActivity extends AppCompatActivity {
             Bitmap bmRotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
             bitmap.recycle();
             return bmRotated;
-        }
-        catch (OutOfMemoryError e) {
+        } catch (OutOfMemoryError e) {
             e.printStackTrace();
             return null;
         }
     }
 
-    private boolean checkEmail(String email){
+    private boolean checkEmail(String email) {
         boolean result = true;
         String regex = "^[_a-zA-Z0-9-\\.]+@[\\.a-zA-Z0-9-]+\\.[a-zA-Z]+$";
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(email);
-        if(m.matches()){
+        if (m.matches()) {
             result = false;
         }
         return result;

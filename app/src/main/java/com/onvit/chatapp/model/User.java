@@ -6,7 +6,6 @@ import android.os.Parcelable;
 public class User implements Comparable<User>, Parcelable {
     private String userName;
     private String userEmail;
-    private String userPassword;
     private String userProfileImageUrl;
     private String uid;
     private String pushToken;
@@ -21,7 +20,6 @@ public class User implements Comparable<User>, Parcelable {
     protected User(Parcel in) {
         userName = in.readString();
         userEmail = in.readString();
-        userPassword = in.readString();
         userProfileImageUrl = in.readString();
         uid = in.readString();
         pushToken = in.readString();
@@ -47,7 +45,6 @@ public class User implements Comparable<User>, Parcelable {
         return "User{" +
                 "userName='" + userName + '\'' +
                 ", userEmail='" + userEmail + '\'' +
-                ", userPassword='" + userPassword + '\'' +
                 ", userProfileImageUrl='" + userProfileImageUrl + '\'' +
                 ", uid='" + uid + '\'' +
                 ", pushToken='" + pushToken + '\'' +
@@ -121,13 +118,6 @@ public class User implements Comparable<User>, Parcelable {
         this.userEmail = userEmail;
     }
 
-    public String getUserPassword() {
-        return userPassword;
-    }
-
-    public void setUserPassword(String userPassword) {
-        this.userPassword = userPassword;
-    }
 
     @Override
     public int describeContents() {
@@ -138,7 +128,6 @@ public class User implements Comparable<User>, Parcelable {
     public void writeToParcel(Parcel parcel, int i) {
         parcel.writeString(userName);
         parcel.writeString(userEmail);
-        parcel.writeString(userPassword);
         parcel.writeString(userProfileImageUrl);
         parcel.writeString(uid);
         parcel.writeString(pushToken);

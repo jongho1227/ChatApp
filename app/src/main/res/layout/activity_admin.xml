@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".AdminActivity">
+
+    <Button
+        android:id="@+id/updateBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="회원목록업데이트 및 정보 맞추기"/>
+    <Button
+        android:id="@+id/deleteChat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="지난채팅삭제"/>
+    <Button
+        android:id="@+id/updateUser"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="유저정보업데이트"/>
+
+</LinearLayout>

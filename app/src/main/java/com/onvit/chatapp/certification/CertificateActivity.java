@@ -23,16 +23,21 @@ import android.webkit.WebViewClient;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.onvit.chatapp.AdminActivity;
 import com.onvit.chatapp.LoginActivity;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.SignUpActivity;
 import com.onvit.chatapp.SplashActivity;
 import com.onvit.chatapp.model.KCHA;
 import com.onvit.chatapp.model.User;
+import com.onvit.chatapp.notice.NoticeActivity;
 
 import org.json.JSONException;
 
@@ -42,6 +47,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
 public class CertificateActivity extends AppCompatActivity {
+
 
     private WebView webView;
     AlertDialog alertDialog;
@@ -66,57 +72,120 @@ public class CertificateActivity extends AppCompatActivity {
 
         @android.webkit.JavascriptInterface
         public void getResult(final String name, final String phone, final String birth, final String gender, final String nation) throws JSONException {
-            final User user = new User();
-            final String newPhone = phone.substring(0,3)+"-"+phone.substring(3,7)+"-"+phone.substring(7);
+            if(getIntent().getStringExtra("search")==null){
+                final User user = new User();
+                final String newPhone = phone.substring(0,3)+"-"+phone.substring(3,7)+"-"+phone.substring(7);
 //            인증된사람만넘어감.
-            FirebaseDatabase.getInstance().getReference().child("KCHA").addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    for(DataSnapshot item : dataSnapshot.getChildren()){
-                        KCHA kcha = item.getValue(KCHA.class);
-                        if(kcha.getPhone().equals(newPhone)){
+                FirebaseDatabase.getInstance().getReference().child("KCHA").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        for(DataSnapshot item : dataSnapshot.getChildren()){
+                            Log.d("로그", item.toString());
+                            KCHA kcha = item.getValue(KCHA.class);
+                            if(kcha.getPhone().equals(newPhone)){
+                                user.setUserName(kcha.getName());
+                                user.setHospital(kcha.getHospital());
+                                user.setUserEmail(kcha.getEmail());
+                                user.setTel(phone);
+                                if(kcha.getGrade().equals("1")){
+                                    user.setGrade("임원");
+                                }else{
+                                    user.setGrade("회원");
+                                }
 
-                            user.setUserName(kcha.getName());
-                            user.setHospital(kcha.getHospital());
-                            user.setUserEmail(kcha.getEmail());
-                            user.setTel(phone);
-                            if(kcha.getGrade().equals("1")){
-                                user.setGrade("임원");
-                            }else{
-                                user.setGrade("일반");
                             }
-
                         }
-                    }
-                    if(user.getUserName()==null || user.getUserName().equals("")){
-                        AlertDialog.Builder builder = new AlertDialog.Builder(CertificateActivity.this);
-                        builder.setMessage("협의회 회원만 가입 가능합니다.");
-                        builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
+                        if(user.getUserName()==null || user.getUserName().equals("")){
+                            AlertDialog.Builder builder = new AlertDialog.Builder(CertificateActivity.this);
+                            builder.setMessage("협의회 회원만 가입 가능합니다.");
+                            builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
                                     Intent intent = new Intent(CertificateActivity.this, LoginActivity.class);
                                     startActivity(intent);
                                     finish();
-                            }
-                        });
-                        builder.setCancelable(false);
-                        builder.create().show();
-                    }else{
-                        Intent intent = new Intent(CertificateActivity.this, SignUpActivity.class);
-                        intent.putExtra("user", user);
-                        startActivity(intent);
-                        finish();
+                                }
+                            });
+                            builder.setCancelable(false);
+                            builder.create().show();
+                        }else{
+                            Intent intent = new Intent(CertificateActivity.this, SignUpActivity.class);
+                            intent.putExtra("user", user);
+                            startActivity(intent);
+                            finish();
+                        }
                     }
-                }
 
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
 
-                }
-            });
+                    }
+                });
 
+            }else{
+                AlertDialog.Builder b = new AlertDialog.Builder(CertificateActivity.this);
+                View noticeView = getLayoutInflater().from(CertificateActivity.this).inflate(R.layout.search,null);
+                b.setView(noticeView);
+                final AlertDialog d = b.create();
+                d.setCanceledOnTouchOutside(false);
+                d.setCancelable(false);
+                d.show();
+                FirebaseDatabase.getInstance().getReference().child("Users").orderByChild("tel").equalTo(phone).addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        if(dataSnapshot.getChildrenCount()==0){
+                            d.dismiss();
+                            AlertDialog.Builder builder = new AlertDialog.Builder(CertificateActivity.this);
+                            builder.setMessage("해당 번호로 가입된 정보가 없습니다.");
+                            builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    finish();
+                                }
+                            });
+                            AlertDialog dialog = builder.create();
+                            dialog.setCanceledOnTouchOutside(false);
+                            dialog.setCancelable(false);
+                            dialog.show();
+                        }else{
+                            for(DataSnapshot item : dataSnapshot.getChildren()){
+                                final User user = item.getValue(User.class);
+                                if(user!=null){
+                                    if(user.getTel().equals(phone)){
+                                        FirebaseAuth auth = FirebaseAuth.getInstance();
+                                        String emailAddress = user.getUserEmail();
+                                        auth.sendPasswordResetEmail(emailAddress).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<Void> task) {
+                                                d.dismiss();
+                                                AlertDialog.Builder builder = new AlertDialog.Builder(CertificateActivity.this);
+                                                builder.setTitle("메일 발송");
+                                                builder.setMessage("가입하신 이메일("+user.getUserEmail()+")로 메일을 발송하였습니다.\n 비밀번호를 재설정 후 이용해주세요.");
+                                                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                                                    @Override
+                                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                                        finish();
+                                                    }
+                                                });
+                                                AlertDialog dialog = builder.create();
+                                                dialog.setCanceledOnTouchOutside(false);
+                                                dialog.setCancelable(false);
+                                                dialog.show();
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+            }
         }
-
     };
 
     WebViewClient mWebViewClient = new WebViewClient() {

@@ -1,16 +1,6 @@
 package com.onvit.chatapp.notice;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -19,6 +9,7 @@ import android.graphics.Matrix;
 import android.graphics.drawable.GradientDrawable;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -34,6 +25,15 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.tasks.Continuation;
@@ -48,7 +48,6 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
 import com.onvit.chatapp.R;
-import com.onvit.chatapp.chat.BigPictureActivity;
 import com.onvit.chatapp.model.Notice;
 import com.onvit.chatapp.model.NotificationModel;
 import com.onvit.chatapp.util.PreferenceManager;
@@ -62,6 +61,9 @@ import org.jetbrains.annotations.NotNull;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -78,7 +80,6 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class NoticeActivity extends AppCompatActivity implements View.OnClickListener {
-    private Toolbar chatToolbar;
     String noticeName;
     Button insertNotice, insertImg;
     LinearLayout layoutTime, layoutBtn;
@@ -87,14 +88,17 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
     ImageView img;
     String code;
     Uri imgUri;
-    private DatabaseReference firebaseDatabase;
-    private String uid;
-    private ArrayList<String> registration_ids = new ArrayList<>();
     RecyclerView recyclerView;
     NoticeActivityRecyclerAdapter noticeActivityRecyclerAdapter;
     ArrayList<String> imgPath = new ArrayList<>();
     ArrayList<Image> imagesList = new ArrayList<>();
     ArrayList<String> deleteKey = new ArrayList<>();
+    InputStream inputStream;
+    private Toolbar chatToolbar;
+    private DatabaseReference firebaseDatabase;
+    private String uid;
+    private ArrayList<String> registration_ids = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -115,77 +119,31 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
         firebaseDatabase = FirebaseDatabase.getInstance().getReference();
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         registration_ids = getIntent().getStringArrayListExtra("userList");
-        if(getIntent().getStringExtra("modify")!=null){
-            if(getSharedPreferences(getPackageName(), MODE_PRIVATE).getInt("modify", 0)==0){
-                AlertDialog.Builder builder = new AlertDialog.Builder(NoticeActivity.this);
-                builder.setTitle("수정 시 새 이미지를 첨부하면 원래 올렸던 사진은 삭제됩니다.");
-                String[] check = {"다시보지않기"};
-                boolean[] checkedItems = {false};
-                builder.setMultiChoiceItems(check, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-                        if(isChecked){
-                            getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putInt("modify", 1).apply();
-                        }else{
-                            getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putInt("modify", 0).apply();
-                        }
-                    }
-                });
-                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                    }
-                });
-                AlertDialog dialog = builder.create();
-                dialog.setCancelable(false);
-                dialog.setCanceledOnTouchOutside(false);
-                dialog.show();
-            }
+        if (getIntent().getStringExtra("modify") != null) {
             noticeName = "공지사항 수정";
-            insertNotice.setText("공지사항수정");
+            insertNotice.setText("수정완료");
             title.setText(getIntent().getStringExtra("title"));
             content.setText(getIntent().getStringExtra("content"));
             code = getIntent().getStringExtra("code");
             ArrayList<String> list = getIntent().getStringArrayListExtra("img");
             imagesList = getIntent().getParcelableArrayListExtra("imgList");
             deleteKey = getIntent().getStringArrayListExtra("deleteKey");
-            if (list.size()>0){
-                for(String s : list){
-                    if(!s.equals("noImg")){
-                        imgPath.add(s);
-                        recyclerView.setVisibility(View.VISIBLE);
-                    }else{
-                        imagesList.clear();
-                        break;
+            if (list != null) {
+                for (String s : list) {
+                    imgPath.add(s);
+                    try {
+                        URL url = new URL(s);
+                        Log.d("주소", url + "");
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
                     }
+                    recyclerView.setVisibility(View.VISIBLE);
                 }
             }
 
-        }else if(getIntent().getStringExtra("view")!=null){
-            noticeName = "공지사항";
-            title.setText(getIntent().getStringExtra("title"));
-            content.setText(getIntent().getStringExtra("content"));
-            name.setText("작성자 : "+ getIntent().getStringExtra("name"));
-            time.setText(getIntent().getStringExtra("time"));
-            ArrayList<String> list = getIntent().getStringArrayListExtra("img");
-            if (list.size()>0){
-                for(String s : list){
-                    if(!s.equals("noImg")){
-                        imgPath.add(s);
-                        recyclerView.setVisibility(View.VISIBLE);
-                    }
-                }
-            }
-            title.setFocusable(false);
-            content.setFocusable(false);
-            title.setClickable(false);
-            content.setClickable(false);
-            layoutTime.setVisibility(View.VISIBLE);
-            layoutBtn.setVisibility(View.GONE);
-        }else if(getIntent().getStringExtra("insert")!=null){
+        } else if (getIntent().getStringExtra("insert") != null) {
             noticeName = "공지사항 등록";
         }
-
         chatToolbar = findViewById(R.id.notice_toolbar);
         chatToolbar.setBackgroundResource(R.color.notice);
         setSupportActionBar(chatToolbar);
@@ -213,21 +171,23 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                 return super.onOptionsItemSelected(item);
         }
     }
+
     @Override
     public void onBackPressed() {
         finish();
         overridePendingTransition(R.anim.fromleft, R.anim.toright);//화면 사라지는 방향
     }
+
     @Override
     public void onClick(View view) {
         Button button = (Button) view;
         String text = button.getText().toString();
 
-        switch (text){
-            case "공지사항등록" :
+        switch (text) {
+            case "등록완료":
                 NoticeActivity.this.getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                 AlertDialog.Builder builder = new AlertDialog.Builder(NoticeActivity.this);
-                View noticeView = getLayoutInflater().from(this).inflate(R.layout.notice,null);
+                View noticeView = getLayoutInflater().from(this).inflate(R.layout.notice, null);
                 final TextView tx = noticeView.findViewById(R.id.progress_notice);
                 builder.setView(noticeView);
                 final AlertDialog dialog = builder.create();
@@ -238,14 +198,15 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                 tx.post(new Runnable() { // 약간의 딜레이를 주어서 뷰처리 먼저 실행하고 난 다음에 아래꺼 처리하게.
                     @Override
                     public void run() {
-                        insertNotices(title, content,dialog, tx);
+                        insertNotices(title, content, dialog, tx);
+
                     }
                 });
                 break;
-            case "공지사항수정" :
+            case "수정완료":
                 NoticeActivity.this.getWindow().addFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                 AlertDialog.Builder builder2 = new AlertDialog.Builder(NoticeActivity.this);
-                View noticeView2 = getLayoutInflater().from(this).inflate(R.layout.notice,null);
+                View noticeView2 = getLayoutInflater().from(this).inflate(R.layout.notice, null);
                 final TextView tx2 = noticeView2.findViewById(R.id.progress_notice);
                 builder2.setView(noticeView2);
                 final AlertDialog dialog2 = builder2.create();
@@ -256,11 +217,11 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                 tx2.post(new Runnable() {
                     @Override
                     public void run() {
-                        modifyNotice(title, content,dialog2, tx2);
+                        modifyNotice(title, content, dialog2, tx2);
                     }
                 });
                 break;
-            case "이미지첨부" :
+            case "이미지첨부":
                 Intent intent = new Intent(this, GalleryActivity.class);
                 Params params = new Params();
                 params.setCaptureLimit(1);
@@ -285,11 +246,14 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
         }
 
         final Map<String, String> uriList = new HashMap<>();
-        if(imagesList != null && imagesList.size()>0 ){
+        if (imagesList != null && imagesList.size() > 0) {
             final int[] flag = {0};
             final DatabaseReference userMessageKeyRef = firebaseDatabase.child("Notice").push();
-            for(Image i : imagesList) {
+            for (Image i : imagesList) {
                 imgUri = i.uri;
+                if (i._id < 100000) {
+                    i._id = new Date().getTime();
+                }
                 final String id = i._id + "";
                 String uri = imgUri.toString();
                 Bitmap bitmap = resize(this, imgUri, 500);
@@ -310,108 +274,76 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                     newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
                     byte[] bytes = baos.toByteArray();
                     uploadTask = storageReference.putBytes(bytes);
-                    uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
-                        @Override
-                        public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
-                            if (!task.isSuccessful()) {
-                                Toast.makeText(NoticeActivity.this, "오류.", Toast.LENGTH_SHORT).show();
-                                dialog.dismiss();
-                                throw task.getException();
-                            }
-                            return storageReference.getDownloadUrl();
+                } else {
+                    try {
+                        inputStream = new DownloadUri().execute(uri).get();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    uploadTask = storageReference.putStream(inputStream);
+                }
+                uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
+                    @Override
+                    public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
+                        if (!task.isSuccessful()) {
+                            Toast.makeText(NoticeActivity.this, "오류.", Toast.LENGTH_SHORT).show();
+                            dialog.dismiss();
+                            throw task.getException();
                         }
-                    }).addOnCompleteListener(new OnCompleteListener<Uri>() {
-                        //storageReference 에 저장한 이미지 uri를 불러옴
-                        @Override
-                        public void onComplete(@NonNull final Task<Uri> task) {
-                            if (task.isSuccessful()) {
-                                Uri taskResult = task.getResult();
-                                String imageUri = taskResult.toString();
-                                uriList.put(id, imageUri);
-                                flag[0]++;
-                                tx.setText("이미지를 업로드 중입니다(" + flag[0] + "/" + imagesList.size() + ")");
-                                if (flag[0] == imagesList.size()) {
-                                    final Notice notice = new Notice();
-                                    notice.setTitle(title);
-                                    notice.setContent(content);
-                                    notice.setUid(uid);
-                                    SimpleDateFormat sd = new SimpleDateFormat("yyyy년 MM월 dd일");
-                                    Date date = new Date();
-                                    String newDate = sd.format(date);
-                                    notice.setTime(newDate);
-                                    notice.setTimestamp(date.getTime());
-                                    notice.setName(PreferenceManager.getString(NoticeActivity.this, "name") + "(" + PreferenceManager.getString(NoticeActivity.this, "hospital") + ")");
-                                    notice.setImg(uriList);
-                                    Map<String, Object> map = new HashMap<>();
-                                    map.put(code, null);
-                                    firebaseDatabase.child("Notice").updateChildren(map).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                        @Override
-                                        public void onComplete(@NonNull Task<Void> task) {
-                                            firebaseDatabase.child("Notice").child(userMessageKeyRef.getKey()).setValue(notice).addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                @Override
-                                                public void onSuccess(Void aVoid) {
-                                                    dialog.dismiss();
-                                                    NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                                                    Toast.makeText(NoticeActivity.this, "수정하였습니다.", Toast.LENGTH_SHORT).show();
-                                                    if (deleteKey.size() > 0) {
-                                                        for (String key : deleteKey) {
-                                                            FirebaseStorage.getInstance().getReference().child("Notice Img").child(code).child(key).delete();
-                                                        }
-                                                    }
-                                                    sendFcm(registration_ids);
-                                                    finish();
-                                                }
-                                            });
-                                        }
-                                    });
-                                }
-
-                            }
-                        }
-                    });
-                } else {//사진 수정안했을때
-                    deleteKey.remove(id);
-                    uriList.put(id,imgPath.get(flag[0]));
-                    flag[0]++;
-                    if(flag[0] == imagesList.size()){
-                        final Notice notice = new Notice();
-                        notice.setTitle(title);
-                        notice.setContent(content);
-                        notice.setUid(uid);
-                        SimpleDateFormat sd = new SimpleDateFormat("yyyy년 MM월 dd일");
-                        Date date = new Date();
-                        String newDate = sd.format(date);
-                        notice.setTime(newDate);
-                        notice.setTimestamp(date.getTime());
-                        notice.setName(PreferenceManager.getString(NoticeActivity.this, "name") + "(" + PreferenceManager.getString(NoticeActivity.this, "hospital") + ")");
-                        notice.setImg(uriList);
-                        Map<String, Object> map = new HashMap<>();
-                        map.put(code, null);
-                        firebaseDatabase.child("Notice").updateChildren(map).addOnCompleteListener(new OnCompleteListener<Void>() {
-                            @Override
-                            public void onComplete(@NonNull Task<Void> task) {
-                                firebaseDatabase.child("Notice").child(code).setValue(notice).addOnSuccessListener(new OnSuccessListener<Void>() {
+                        return storageReference.getDownloadUrl();
+                    }
+                }).addOnCompleteListener(new OnCompleteListener<Uri>() {
+                    //storageReference 에 저장한 이미지 uri를 불러옴
+                    @Override
+                    public void onComplete(@NonNull final Task<Uri> task) {
+                        if (task.isSuccessful()) {
+                            Uri taskResult = task.getResult();
+                            String imageUri = taskResult.toString();
+                            uriList.put(id, imageUri);
+                            flag[0]++;
+                            tx.setText("이미지를 업로드 중입니다(" + flag[0] + "/" + imagesList.size() + ")");
+                            if (flag[0] == imagesList.size()) {
+                                final Notice notice = new Notice();
+                                notice.setTitle(title);
+                                notice.setContent(content);
+                                notice.setUid(uid);
+                                SimpleDateFormat sd = new SimpleDateFormat("yyyy년 MM월 dd일");
+                                Date date = new Date();
+                                String newDate = sd.format(date);
+                                notice.setTime(newDate);
+                                notice.setTimestamp(date.getTime());
+                                notice.setName(PreferenceManager.getString(NoticeActivity.this, "name") + "(" + PreferenceManager.getString(NoticeActivity.this, "hospital") + ")");
+                                notice.setImg(uriList);
+                                Map<String, Object> map = new HashMap<>();
+                                map.put(code, null);
+                                firebaseDatabase.child("Notice").updateChildren(map).addOnCompleteListener(new OnCompleteListener<Void>() {
                                     @Override
-                                    public void onSuccess(Void aVoid) {
-                                        dialog.dismiss();
-                                        NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                                        Toast.makeText(NoticeActivity.this, "수정하였습니다.", Toast.LENGTH_SHORT).show();
-                                        if(deleteKey.size()>0){
-                                            for (String key : deleteKey) {
-                                                FirebaseStorage.getInstance().getReference().child("Notice Img").child(code).child(key).delete();
+                                    public void onComplete(@NonNull Task<Void> task) {
+                                        firebaseDatabase.child("Notice").child(userMessageKeyRef.getKey()).setValue(notice).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            @Override
+                                            public void onSuccess(Void aVoid) {
+                                                dialog.dismiss();
+                                                NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
+                                                Toast.makeText(NoticeActivity.this, "수정하였습니다.", Toast.LENGTH_SHORT).show();
+                                                if (deleteKey.size() > 0) {
+                                                    for (String key : deleteKey) {
+                                                        FirebaseStorage.getInstance().getReference().child("Notice Img").child(code).child(key).delete();
+                                                    }
+                                                }
+                                                sendFcm(registration_ids);
+                                                finish();
                                             }
-                                        }
-                                        sendFcm(registration_ids);
-                                        finish();
+                                        });
                                     }
                                 });
                             }
-                        });
+
+                        }
                     }
-                }
+                });
             }
-        }else{
-            uriList.put("noImg","noImg");
+        } else {
+            uriList.put("noImg", "noImg");
             final Notice notice = new Notice();
             notice.setTitle(title);
             notice.setContent(content);
@@ -434,7 +366,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                             dialog.dismiss();
                             NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                             Toast.makeText(NoticeActivity.this, "수정하였습니다.", Toast.LENGTH_SHORT).show();
-                            if(deleteKey.size()>0){
+                            if (deleteKey.size() > 0) {
                                 for (String key : deleteKey) {
                                     FirebaseStorage.getInstance().getReference().child("Notice Img").child(code).child(key).delete();
                                 }
@@ -458,12 +390,12 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
             Toast.makeText(NoticeActivity.this, "제목과 내용을 입력하시기 바랍니다.", Toast.LENGTH_SHORT).show();
             return;
         }
-        final Map<String,String> imgUriList = new HashMap<>();
-        if(imagesList!=null && imagesList.size()>0 ){
+        final Map<String, String> imgUriList = new HashMap<>();
+        if (imagesList != null && imagesList.size() > 0) {
             final DatabaseReference userMessageKeyRef = firebaseDatabase.child("Notice").push();
-            for(Image i : imagesList){
+            for (Image i : imagesList) {
                 imgUri = i.uri;
-                final String id = i._id+"";
+                final String id = new Date().getTime() + "";
                 Bitmap bitmap = resize(this, imgUri, 500);
                 String filePath = getRealPathFromURI(imgUri);
                 ExifInterface exif = null;
@@ -498,9 +430,9 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                             String imageUri = taskResult.toString();
                             imgUriList.put(id, imageUri);
                             flag[0]++;
-                            tx.setText("이미지를 업로드 중입니다("+flag[0]+"/"+imagesList.size()+")");
-                            Log.d("이미지 업로드", flag[0]+"");
-                            if(flag[0]==imagesList.size()){
+                            tx.setText("이미지를 업로드 중입니다(" + flag[0] + "/" + imagesList.size() + ")");
+                            Log.d("이미지 업로드", flag[0] + "");
+                            if (flag[0] == imagesList.size()) {
                                 Log.d("이미지 업로드", "시작");
                                 Notice notice = new Notice();
                                 notice.setTitle(title);
@@ -528,7 +460,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                     }
                 });
             }
-        }else{
+        } else {
             imgUriList.put("noImg", "noImg");
             Notice notice = new Notice();
             notice.setTitle(title);
@@ -568,14 +500,14 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
 //        notificationModel.notification.click_action = "GroupMessage";
 
         notificationModel.data.title = userName;
-        notificationModel.data.text = userName+"님이 새로운 공지를 등록하였습니다.";
+        notificationModel.data.text = userName + "님이 새로운 공지를 등록하였습니다.";
         notificationModel.data.tag = "notice";
         notificationModel.data.click_action = "GroupMessage";
 
 
         RequestBody requestBody = RequestBody.create(gson.toJson(notificationModel), MediaType.parse("application/json; charset=utf8"));
         Request request = new Request.Builder().header("Content-Type", "apllication/json")
-                .addHeader("Authorization", "key=AAAAjkt-NJ4:APA91bF8vZrFrqLIRfpPwE_WvUrGj4aQEP8xF9_UvvG4MZXA2iV-o7NPAJdGGYhlMl_JXP8KQiF_YWQeVhT0DE8BSppJUfYazA0QR7tjozAdpzMvX9xLSHJ1mkOevT4_OlohvlOYS_e-")
+                .addHeader("Authorization", "key=AAAArdglT3o:APA91bFnw2-330VSRLDfJa-w21cy8C4AbOtC6xpg2WKHs-oV-T8TjFk6wJiFBX7TRr-LQTuVQHTMsoZQ8pc0zt91JZWmrg8jaOKtJLJcl4adp4cfz557ft8KgJhXmGw_rQ_J6hydzapw")
                 .url("https://fcm.googleapis.com/fcm/send")
                 .post(requestBody)
                 .build();
@@ -596,13 +528,14 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == Constants.TYPE_MULTI_PICKER && resultCode == RESULT_OK){
+        if (requestCode == Constants.TYPE_MULTI_PICKER && resultCode == RESULT_OK) {
             recyclerView.setVisibility(View.VISIBLE);
-            imagesList.clear();
-            imgPath.clear();
-            imagesList = data.getParcelableArrayListExtra(Constants.KEY_BUNDLE_LIST);
-            for(Image i : imagesList){
+//            imagesList.clear();
+//            imgPath.clear();
+            ArrayList<Image> img = data.getParcelableArrayListExtra(Constants.KEY_BUNDLE_LIST);
+            for (Image i : img) {
                 imgPath.add(i.uri.toString());
+                imagesList.add(i);
             }
             noticeActivityRecyclerAdapter.notifyDataSetChanged();
         }
@@ -713,7 +646,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
 
         @Override
         public void onBindViewHolder(@NonNull final NoticeViewHolder holder, final int position) {
-            Log.d("이미지", position+"");
+            Log.d("이미지", position + "");
 
             switch (noticeName) {
                 case "공지사항 등록":
@@ -725,23 +658,9 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                             imgPath.remove(position);
                             imagesList.remove(position);
                             noticeActivityRecyclerAdapter.notifyDataSetChanged();
-                            if(imgPath.size()==0){
+                            if (imgPath.size() == 0) {
                                 recyclerView.setVisibility(View.GONE);
                             }
-                        }
-                    });
-                    break;
-                case "공지사항":
-                    holder.text.setText("클릭하여 확대");
-                    holder.itemView.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View view) {
-                            Intent intent = new Intent(NoticeActivity.this, BigPictureActivity.class);
-                            intent.putExtra("uri", imgPath.get(position));
-                            intent.putExtra("position", position);
-                            intent.putStringArrayListExtra("list", imgPath);
-                            intent.putExtra("name", name.getText().toString());
-                            startActivity(intent);
                         }
                     });
                     break;
@@ -761,12 +680,33 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
         private class NoticeViewHolder extends RecyclerView.ViewHolder {
             private TextView text;
             private ImageView imageView;
+
             NoticeViewHolder(View itemView) {
                 super(itemView);
                 text = itemView.findViewById(R.id.layout_img_text);
                 imageView = itemView.findViewById(R.id.info_img);
 
             }
+        }
+    }
+
+    class DownloadUri extends AsyncTask<String, String, InputStream> {
+
+        @Override
+        protected InputStream doInBackground(String... strings) {
+            try {
+                String uri = strings[0];
+                URL url = new URL(uri);
+                inputStream = (InputStream) url.getContent();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return inputStream;
+        }
+
+        @Override
+        protected void onPostExecute(InputStream inputStream) {
+
         }
     }
 }

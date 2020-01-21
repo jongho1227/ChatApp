@@ -30,24 +30,17 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
-import com.onvit.chatapp.model.KCHA;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.PreferenceManager;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import jxl.Sheet;
-import jxl.Workbook;
-
 public class SplashActivity extends AppCompatActivity {
-
     private FirebaseRemoteConfig mFirebaseRemoteConfig;
     private FirebaseAuth firebaseAuth;
     private ValueEventListener valueEventListener;
@@ -70,6 +63,8 @@ public class SplashActivity extends AppCompatActivity {
                 .build();
         mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
 
+
+        //다 메인으로 옮겨서 실행.
 
         mFirebaseRemoteConfig.fetchAndActivate()
                 .addOnCompleteListener(this, new OnCompleteListener<Boolean>() {
@@ -96,17 +91,17 @@ public class SplashActivity extends AppCompatActivity {
         String updateMessage = mFirebaseRemoteConfig.getString("update_message");
         PackageInfo p = null;
         try {
-            p = getPackageManager().getPackageInfo(getPackageName(),0);
+            p = getPackageManager().getPackageInfo(getPackageName(), 0);
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
         long version = 0;
-        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.P){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             version = p.getLongVersionCode();
-        }else{
+        } else {
             version = p.versionCode;
         }
-        Log.d("버전코드", version+"");
+        Log.d("버전코드", version + "");
         if (versionCode != version) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage(updateMessage).setPositiveButton("확인", new DialogInterface.OnClickListener() {
@@ -132,7 +127,7 @@ public class SplashActivity extends AppCompatActivity {
         }
     }
 
-    private void createNotificationChannel(){
+    private void createNotificationChannel() {
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -156,8 +151,7 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void initSplash() {
-        //회원들 정보 넣음.
-//                insertExel();
+
         if (PreferenceManager.getString(SplashActivity.this, "name") == null || PreferenceManager.getString(SplashActivity.this, "name").equals("")
                 || FirebaseAuth.getInstance().getCurrentUser() == null) {
             firebaseAuth.signOut();
@@ -165,15 +159,6 @@ public class SplashActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         } else {
-            final Date date = new Date();
-            long twoM = (24L * 60 * 60 * 1000 * 60);
-            long oldDate = date.getTime() - twoM;
-            //맨 처음채팅부터 200개씩 가져와서 두달지난거 삭제함.
-            String chatName = "normalChat";
-            deleteChat(oldDate, chatName);
-            chatName = "officerChat";
-            deleteChat(oldDate, chatName);
-
             valueEventListener = new ValueEventListener() { // Users데이터의 변화가 일어날때마다 콜백으로 호출됨.
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -185,17 +170,17 @@ public class SplashActivity extends AppCompatActivity {
                             user = snapshot.getValue(User.class);
                             key = snapshot.getKey();
                         }
-                        if(snapshot.getValue(User.class).getUserName()==null){
+                        if (snapshot.getValue(User.class).getUserName() == null) {
                             Map<String, Object> map = new HashMap<>();
-                            map.put("Users/"+snapshot.getKey(), null);
-                            map.put("groupChat/normalChat/userInfo/"+snapshot.getKey(), null);
-                            map.put("groupChat/officerChat/userInfo/"+snapshot.getKey(), null);
-                            map.put("groupChat/normalChat/users/"+snapshot.getKey(), null);
-                            map.put("groupChat/officerChat/users/"+snapshot.getKey(), null);
-                            map.put("lastChat/normalChat/existUsers/"+snapshot.getKey(), null);
-                            map.put("lastChat/officerChat/existUsers/"+snapshot.getKey(), null);
-                            map.put("lastChat/normalChat/users/"+snapshot.getKey(), null);
-                            map.put("lastChat/officerChat/users/"+snapshot.getKey(), null);
+                            map.put("Users/" + snapshot.getKey(), null);
+                            map.put("groupChat/normalChat/userInfo/" + snapshot.getKey(), null);
+                            map.put("groupChat/officerChat/userInfo/" + snapshot.getKey(), null);
+                            map.put("groupChat/normalChat/users/" + snapshot.getKey(), null);
+                            map.put("groupChat/officerChat/users/" + snapshot.getKey(), null);
+                            map.put("lastChat/normalChat/existUsers/" + snapshot.getKey(), null);
+                            map.put("lastChat/officerChat/existUsers/" + snapshot.getKey(), null);
+                            map.put("lastChat/normalChat/users/" + snapshot.getKey(), null);
+                            map.put("lastChat/officerChat/users/" + snapshot.getKey(), null);
                             FirebaseDatabase.getInstance().getReference().updateChildren(map);
                         }
 
@@ -215,6 +200,7 @@ public class SplashActivity extends AppCompatActivity {
                                 text = intent.getStringExtra(Intent.EXTRA_TEXT);
                                 Intent intent1 = new Intent(SplashActivity.this, MainActivity.class);
                                 intent1.putExtra("text", text);
+                                intent1.putExtra("user", user);
                                 intent1.setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                                 startActivity(intent1);
                                 finish();
@@ -222,25 +208,28 @@ public class SplashActivity extends AppCompatActivity {
                                 Intent intent1 = new Intent(SplashActivity.this, MainActivity.class);
                                 uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
                                 final Uri convertUri = getConvertUri(uri);
-                                Log.d("이미지 공유", uri+"");
-                                Log.d("이미지 공유", convertUri+"");
+                                Log.d("이미지 공유", uri + "");
+                                Log.d("이미지 공유", convertUri + "");
                                 if (convertUri != null) {
                                     intent1.putExtra("shareUri", convertUri);
                                     intent1.putExtra("filePath", filePath);
                                 }
                                 intent1.setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                intent1.putExtra("user", user);
                                 startActivity(intent1);
                                 finish();
                             }
-                        } else if(getIntent().getStringExtra("tag")!=null){
+                        } else if (getIntent().getStringExtra("tag") != null) {
                             Intent intent2 = new Intent(SplashActivity.this, MainActivity.class);
-                            intent2.putExtra("tag",getIntent().getStringExtra("tag"));
+                            intent2.putExtra("tag", getIntent().getStringExtra("tag"));
+                            intent2.putExtra("user", user);
                             intent2.setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             startActivity(intent2);
                             finish();
 
-                        }else{
+                        } else {
                             Intent intent2 = new Intent(SplashActivity.this, MainActivity.class);
+                            intent2.putExtra("user", user);
                             intent2.setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             startActivity(intent2);
                             finish();
@@ -257,89 +246,6 @@ public class SplashActivity extends AppCompatActivity {
             };
             FirebaseDatabase.getInstance().getReference().child("Users").addValueEventListener(valueEventListener);
         }
-    }
-
-    private void insertExel() {
-        try {
-            InputStream is = getBaseContext().getResources().getAssets().open("대한지역병원협의회 회원명단.xls");
-            Workbook wb = Workbook.getWorkbook(is);
-
-            Map<String, Object> list = new HashMap<>();
-            Sheet sheet = wb.getSheet(0);   // 시트 불러오기
-            if (sheet != null) {
-                int colTotal = sheet.getColumns();    // 전체 컬럼
-                int rowIndexStart = 2;                  // row 인덱스 시작
-                int rowTotal = sheet.getRows();
-                KCHA sb;
-                for (int row = rowIndexStart; row < rowTotal; row++) {
-                    sb = new KCHA();
-                    for (int col = 1; col < colTotal - 3; col++) {
-                        String contents = sheet.getCell(col, row).getContents();
-                        switch (col) {
-                            case 1:
-                                sb.setName(contents);
-                                break;
-                            case 2:
-                                sb.setHospital(contents);
-                                break;
-                            case 3:
-                                sb.setPhone(contents);
-                                break;
-                            case 4:
-                                sb.setMajor(contents);
-                                break;
-                            case 5:
-                                sb.setAddress(contents);
-                                break;
-                            case 6:
-                                sb.setEmail(contents);
-                                break;
-                            case 7:
-                                sb.setTel(contents);
-                                break;
-                            case 8:
-                                sb.setFax(contents);
-                                break;
-                            case 9:
-                                sb.setmNo(contents);
-                                break;
-                            case 10:
-                                sb.setGrade(contents);
-                                break;
-                        }
-                    }
-                    list.put(sb.getName(), sb);
-                }
-                FirebaseDatabase.getInstance().getReference().child("KCHA").updateChildren(list);
-
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
-
-    private void deleteChat(final long date, final String chatName) {
-        FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments")
-                .orderByChild("timestamp")
-                .endAt(date).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Map<String, Object> map = new HashMap<>();
-                Log.d("삭제", dataSnapshot.getChildrenCount() + "");
-                for (DataSnapshot item : dataSnapshot.getChildren()) {
-                    map.put(item.getKey(), null);
-                }
-                FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments").updateChildren(map);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
     }
 
     private Uri getConvertUri(Uri uri) {
@@ -372,6 +278,4 @@ public class SplashActivity extends AppCompatActivity {
             FirebaseDatabase.getInstance().getReference().child("Users").removeEventListener(valueEventListener);
         }
     }
-
-
 }

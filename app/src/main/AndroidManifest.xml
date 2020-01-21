@@ -29,8 +29,11 @@
         android:roundIcon="@mipmap/ic_kcha_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.StatusBar">
-        <activity android:name=".notice.NoticeActivity"
-            android:windowSoftInputMode="adjustResize"></activity>
+        <activity android:name=".AdminActivity"></activity>
+        <activity android:name=".notice.NoticeActivity2" />
+        <activity
+            android:name=".notice.NoticeActivity"
+            android:windowSoftInputMode="adjustResize" />
         <activity android:name=".certification.CertificateActivity" />
         <activity android:name=".ad.ADActivity" />
         <activity android:name=".chat.BigPictureActivity" />
@@ -75,6 +78,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
         <service
             android:name=".fcm.MyFirebaseMessagingService"
             android:exported="false">
@@ -90,7 +94,7 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"/>
+                android:resource="@xml/file_paths" />
         </provider>
     </application>
 

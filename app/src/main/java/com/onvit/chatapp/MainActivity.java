@@ -20,14 +20,18 @@ import androidx.core.content.ContextCompat;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
-import com.onvit.chatapp.chat.SelectGroupChatActivity;
-import com.onvit.chatapp.chat.ChatFragment;
-import com.onvit.chatapp.notice.NoticeFragment;
-import com.onvit.chatapp.contact.PeopleFragment;
 import com.onvit.chatapp.ad.ShoppingFragment;
+import com.onvit.chatapp.chat.ChatFragment;
+import com.onvit.chatapp.chat.SelectGroupChatActivity;
+import com.onvit.chatapp.contact.PeopleFragment;
+import com.onvit.chatapp.model.User;
+import com.onvit.chatapp.notice.NoticeFragment;
 import com.onvit.chatapp.util.PreferenceManager;
 
 import java.util.ArrayList;
@@ -39,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth firebaseAuth;
     private String text = null;
     private Uri uri = null;
+    private User user;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +57,12 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         }
+        user = getIntent().getParcelableExtra("user");
+        PreferenceManager.setString(MainActivity.this, "name", user.getUserName());
+        PreferenceManager.setString(MainActivity.this, "hospital", user.getHospital());
+        PreferenceManager.setString(MainActivity.this, "phone", user.getTel());
+        PreferenceManager.setString(MainActivity.this, "uid", user.getUid());
+
         getIntent().addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         BottomNavigationView bottomNavigationView = findViewById(R.id.mainActivity_bottomNavigationView);
         getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new NoticeFragment()).commitAllowingStateLoss();
@@ -113,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, strArray, PERMISSION_REQUEST_CODE);
         }
     }
+
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode) {
@@ -126,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
                     String permission = permissions[i];
                     if (grantResults[i] == PackageManager.PERMISSION_DENIED) {
                         boolean showRationale = ActivityCompat.shouldShowRequestPermissionRationale(this, permission);
-                        if(!showRationale){
+                        if (!showRationale) {
                             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                             builder.setMessage("앱의 원활한 사용을 위해 권한을 허용해야 합니다. 앱 정보로 이동합니다.\n [저장공간]권한을 허용해주세요.");
                             builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
@@ -143,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
                             dialog.setCancelable(false);
                             dialog.setCanceledOnTouchOutside(false);
                             dialog.show();
-                        }else{
+                        } else {
                             AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                             builder.setMessage("앱의 원활한 사용을 위해 권한을 허용해야 합니다.");
                             builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
@@ -157,12 +169,11 @@ public class MainActivity extends AppCompatActivity {
                             dialog.setCanceledOnTouchOutside(false);
                             dialog.show();
                         }
-                    }else{
+                    } else {
                         Toast.makeText(this, "권한을 허용하였습니다.", Toast.LENGTH_SHORT).show();
                         // Initialize 코드
                     }
                 }
-
 
 
             }
@@ -175,7 +186,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if(getIntent().getStringExtra("tag")!=null){
+        if (getIntent().getStringExtra("tag") != null) {
             if (getIntent().getStringExtra("tag").equals("normalChat") || getIntent().getStringExtra("tag").equals("officerChat")) {
                 getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new ChatFragment()).commitAllowingStateLoss();
                 getIntent().removeExtra("tag");
@@ -196,7 +207,7 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseDatabase.getInstance().getReference().child("Users").child(uid).updateChildren(map);
                 FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("userInfo").child(uid).updateChildren(map);
 
-                if (PreferenceManager.getString(MainActivity.this, "grade").equals("임원")) {
+                if (user.getGrade().equals("임원")) {
                     FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").child(uid).updateChildren(map);
                 }
             }
@@ -207,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
-        getMenuInflater().inflate(R.menu.mail_option_menu, menu);
+        getMenuInflater().inflate(R.menu.main_option_menu, menu);
         return true;
     }
 
@@ -222,7 +233,7 @@ public class MainActivity extends AppCompatActivity {
             map.put("pushToken", "");
             FirebaseDatabase.getInstance().getReference().child("Users").child(uid).updateChildren(map);
             FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("userInfo").child(uid).updateChildren(map);
-            if (PreferenceManager.getString(MainActivity.this, "grade").equals("임원")) {
+            if (user.getGrade().equals("임원")) {
                 FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").child(uid).updateChildren(map);
             }
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
@@ -230,6 +241,28 @@ public class MainActivity extends AppCompatActivity {
             PreferenceManager.clear(this);
             startActivity(intent);
             finish();
+        } else if (item.getItemId() == R.id.admin) {
+            FirebaseDatabase.getInstance().getReference().child("Users").orderByChild("hospital").equalTo("개발자").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    if (dataSnapshot.getChildrenCount() == 0) {
+                        Toast.makeText(MainActivity.this, "관리자만 사용할 수 있습니다.", Toast.LENGTH_SHORT).show();
+                    }
+                    for (DataSnapshot item : dataSnapshot.getChildren()) {
+                        User dUser = item.getValue(User.class);
+                        if (user.getUid().equals(dUser.getUid())) {
+                            Intent intent = new Intent(MainActivity.this, AdminActivity.class);
+                            startActivity(intent);
+                        } else {
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
         }
 
         return true;

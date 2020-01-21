@@ -1,9 +1,8 @@
 package com.onvit.chatapp.notice;
 
 import android.app.ActivityOptions;
-import android.content.DialogInterface;
 import android.content.Intent;
-import android.net.Uri;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -12,7 +11,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -25,8 +23,6 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -34,21 +30,18 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.storage.FirebaseStorage;
 import com.onvit.chatapp.MainActivity;
-import com.onvit.chatapp.notice.NoticeActivity;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.Notice;
 import com.onvit.chatapp.model.User;
-import com.vlk.multimager.utils.Image;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class NoticeFragment extends Fragment {
     private AppCompatActivity activity;
@@ -89,6 +82,7 @@ public class NoticeFragment extends Fragment {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 noticeLists.clear();
                 for (DataSnapshot item : dataSnapshot.getChildren()) {
+                    Log.d("공지", item.toString());
                     Notice noticeList = item.getValue(Notice.class);
                     noticeList.setCode(item.getKey());
                     noticeLists.add(noticeList);
@@ -113,7 +107,6 @@ public class NoticeFragment extends Fragment {
                         continue;
                     }
                     registration_ids.add(user.getPushToken());
-
                 }
             }
 
@@ -156,120 +149,112 @@ public class NoticeFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull final NoticeViewHolder holder, final int position) {
             holder.time.setVisibility(View.VISIBLE);
-            if (position > 0) {
-                if (noticeList.get(position).getTime().equals(noticeList.get(position - 1).getTime())) {
-                    holder.time.setVisibility(View.GONE);
-                }
-            }
-            holder.delete.setVisibility(View.INVISIBLE);
-            holder.update.setVisibility(View.INVISIBLE);
+            holder.newicon.setVisibility(View.VISIBLE);
             holder.name.setText(noticeList.get(position).getName());
+            holder.name.setTextColor(Color.GRAY);
             holder.title.setText(noticeList.get(position).getTitle());
+            if (uid.equals(noticeList.get(position).getUid())) {
+                holder.name.setTextColor(Color.BLUE);
+            }
 
-            holder.time.setText(noticeList.get(position).getTime());
+            long nTime = (long) (noticeList.get(position).getTimestamp());
+            long cTime = new Date().getTime();
 
+            int nSecond = (int) (nTime / 1000);
+            int cSeconde = (int) (cTime / 1000);
+
+            int diffSecond = cSeconde - nSecond;
+
+            if (diffSecond < 360) {
+                holder.time.setText("방금 전");
+            } else if (diffSecond < 3600) {
+                holder.time.setText(diffSecond / 60 + "분 전");
+            } else if (diffSecond < 86400) {
+                holder.time.setText(diffSecond / 3600 + "시간 전");
+            } else if (diffSecond < 259200) {
+                holder.time.setText(diffSecond / 86400 + "일 전");
+            } else if (diffSecond < 604800) {
+                holder.time.setText(diffSecond / 86400 + "일 전");
+                holder.newicon.setVisibility(View.INVISIBLE);
+            } else {
+                holder.time.setText(noticeList.get(position).getTime());
+                holder.newicon.setVisibility(View.INVISIBLE);
+            }
             holder.layout.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onClick(View view) {
-                    Intent intent = new Intent(getActivity(), NoticeActivity.class);
-                    intent.putExtra("view", "view");
+                public void onClick(final View view) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                    View noticeView = getLayoutInflater().from(getContext()).inflate(R.layout.info_notice, null);
+                    builder.setView(noticeView);
+                    final AlertDialog dialog = builder.create();
+                    dialog.setCanceledOnTouchOutside(false);
+                    dialog.setCancelable(false);
+                    dialog.show();
+
+                    firebaseDatabase.child("Users").orderByChild("uid").equalTo(noticeList.get(position).getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            Log.d("유저", dataSnapshot.getChildrenCount() + "");
+                            if (dataSnapshot.getChildrenCount() == 0) {
+                                Intent intent = new Intent(getActivity(), NoticeActivity2.class);
+                                intent.putExtra("profile", "noImg");
+                                startIntent(intent, view, dialog, position);
+                            } else {
+                                for (DataSnapshot item : dataSnapshot.getChildren()) {
+                                    User user = item.getValue(User.class);
+                                    Intent intent = new Intent(getActivity(), NoticeActivity2.class);
+                                    Log.d("유저", user.toString());
+                                    if (user.getUserProfileImageUrl() != null) {
+                                        intent.putExtra("profile", user.getUserProfileImageUrl());
+                                    } else {
+                                        intent.putExtra("profile", "noImg");
+                                    }
+                                    startIntent(intent, view, dialog, position);
+                                }
+                            }
+
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+                }
+
+                private void startIntent(Intent intent, View view, AlertDialog dialog, int position) {
                     intent.putExtra("title", noticeList.get(position).getTitle());
                     intent.putExtra("content", noticeList.get(position).getContent());
                     intent.putExtra("time", noticeList.get(position).getTime());
                     intent.putExtra("name", noticeList.get(position).getName());
-                    if(noticeList.get(position).getImg()!=null){
+                    intent.putExtra("code", noticeList.get(position).getCode());
+                    intent.putExtra("writer", noticeList.get(position).getUid());
+                    intent.putStringArrayListExtra("userList", registration_ids);
+                    if (noticeList.get(position).getImg() != null) {
                         ArrayList<String> list = new ArrayList<>();
-                        Set<String> keys = noticeList.get(position).getImg().keySet();
+                        ArrayList<String> deletekey = new ArrayList<>();
+                        Map<String, String> hashMap = noticeList.get(position).getImg();
+
+                        TreeMap<String, String> treeMap = new TreeMap<>(hashMap);
+                        Set<String> keys = treeMap.keySet();
                         for (String key1 : keys) {
-                            Object value = noticeList.get(position).getImg().get(key1);
-                            list.add(value.toString());
+                            if (key1.equals("noImg")) {
+                                break;
+                            } else {
+                                long id = Long.parseLong(key1);
+                                Object value = noticeList.get(position).getImg().get(key1);
+                                list.add(value.toString());
+                                deletekey.add(id + "");
+                            }
                         }
                         intent.putStringArrayListExtra("img", list);
+                        intent.putStringArrayListExtra("deleteKey", deletekey);
                     }
                     ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(view.getContext(), R.anim.fromright, R.anim.toleft);
+                    dialog.dismiss();
                     startActivity(intent, activityOptions.toBundle());
                 }
             });
-
-            if (noticeList.get(position).getUid().equals(uid)) {
-                holder.delete.setVisibility(View.VISIBLE);
-                holder.update.setVisibility(View.VISIBLE);
-
-                holder.delete.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(Objects.requireNonNull(getContext()));
-                        builder.setTitle("정말 삭제하시겠습니까?");
-                        builder.setPositiveButton("삭제", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-                                Map<String, Object> map = new HashMap<>();
-                                map.put(noticeList.get(position).getCode(), null);
-                                if(noticeList.get(position).getImg()!=null && noticeList.get(position).getImg().get("noImg")==null){
-                                    Set<String> keys = noticeList.get(position).getImg().keySet();
-                                    Log.d("코드", noticeList.get(position).getCode()+"");
-                                    for(String key : keys){
-                                        Log.d("코드값", key);
-                                        FirebaseStorage.getInstance().getReference().child("Notice Img").child(noticeList.get(position).getCode()).child(key).delete();
-                                    }
-
-                                }
-                                firebaseDatabase.child("Notice").updateChildren(map).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<Void> task) {
-                                        Toast.makeText(getContext(), "삭제하였습니다.", Toast.LENGTH_SHORT).show();
-                                    }
-                                });
-                            }
-                        }).setNegativeButton("취소", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int i) {
-
-                            }
-                        });
-                        builder.show();
-                    }
-                });
-                holder.update.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        ArrayList<Image> imgList = new ArrayList<>();
-                        Intent intent = new Intent(getActivity(), NoticeActivity.class);
-                        intent.putExtra("modify", "modify");
-                        intent.putStringArrayListExtra("userList", registration_ids);
-                        intent.putExtra("title", noticeList.get(position).getTitle());
-                        intent.putExtra("content", noticeList.get(position).getContent());
-                        intent.putExtra("code", noticeList.get(position).getCode());
-                        if(noticeList.get(position).getImg()!=null){
-                            ArrayList<String> list = new ArrayList<>();
-                            ArrayList<String> deleteKey = new ArrayList<>();
-                            Set<String> keys = noticeList.get(position).getImg().keySet();
-                            for (String key1 : keys) {
-                                if(key1.equals("noImg")){
-                                    break;
-                                }else{
-                                    long id = Long.parseLong(key1);
-                                    Uri uri = Uri.parse(noticeList.get(position).getImg().get(key1));
-                                    String path = "path";
-                                    boolean b = true;
-                                    Image image = new Image(id,uri,path,b);
-                                    imgList.add(image);
-                                    Object value = noticeList.get(position).getImg().get(key1);
-                                    list.add(value.toString());
-                                    deleteKey.add(id+"");
-                                }
-
-                            }
-                            intent.putStringArrayListExtra("img", list);
-                            intent.putStringArrayListExtra("deleteKey", deleteKey);
-                            intent.putParcelableArrayListExtra("imgList", imgList);
-                        }
-                        ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(view.getContext(), R.anim.fromright, R.anim.toleft);
-                        startActivity(intent, activityOptions.toBundle());
-                    }
-                });
-            }
-
         }
 
         @Override
@@ -282,16 +267,17 @@ public class NoticeFragment extends Fragment {
             TextView title;
             TextView name;
             TextView time;
-            ImageView delete;
-            ImageView update;
+            ImageView newicon;
+            ImageView notice;
             LinearLayout layout;
+
             public NoticeViewHolder(View itemView) {
                 super(itemView);
                 title = itemView.findViewById(R.id.notice_title);
                 time = itemView.findViewById(R.id.notice_time);
                 name = itemView.findViewById(R.id.notice_name);
-                delete = itemView.findViewById(R.id.delete);
-                update = itemView.findViewById(R.id.update);
+                newicon = itemView.findViewById(R.id.new_icon);
+                notice = itemView.findViewById(R.id.notice);
                 layout = itemView.findViewById(R.id.layout_title);
             }
         }
