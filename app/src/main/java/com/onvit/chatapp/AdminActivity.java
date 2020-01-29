@@ -1,14 +1,13 @@
 package com.onvit.chatapp;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -52,7 +51,8 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
             case R.id.updateBtn:
                 //회원들 정보 넣음.
                 insertExel();
-//                aaa();//엑셀에 표시된 등급에 맞게 수정하는 쿼리.
+                updateInfo();
+                aaa();//엑셀에 표시된 등급에 맞게 수정하는 쿼리.
                 break;
             case R.id.deleteChat:
                 final Date date = new Date();
@@ -69,6 +69,52 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
                 break;
         }
     }
+
+    private void updateInfo() {
+        //병원이름 엑셀파일이랑 맞춤.
+        FirebaseDatabase.getInstance().getReference().child("Users").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (DataSnapshot item : dataSnapshot.getChildren()) {
+                    final User user = item.getValue(User.class);
+                    final String key = item.getKey();
+                    String phone = user.getTel().substring(0, 3) + "-" + user.getTel().substring(3, 7) + "-" + user.getTel().substring(7);
+                    FirebaseDatabase.getInstance().getReference().child("KCHA").orderByChild("phone").equalTo(phone).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            for (DataSnapshot item : dataSnapshot.getChildren()) {
+                                if (dataSnapshot.getChildrenCount() == 1) {
+                                    Map<String, Object> allMap = new HashMap<>();
+                                    KCHA kcha = item.getValue(KCHA.class);
+                                    user.setHospital(kcha.getHospital());
+                                    allMap.put(key, user);
+                                    FirebaseDatabase.getInstance().getReference().child("Users").updateChildren(allMap);
+                                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("userInfo").updateChildren(allMap);
+                                    if (user.getGrade().equals("임원")) {
+                                        FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").updateChildren(allMap);
+                                    }
+
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
     private void updateUser() {
         //유저 일반으로 들어가있는사람 -> 회원으로 변경
         //비밀번호 없앴음.
@@ -77,12 +123,12 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Map<String, Object> allMap = new HashMap<>();
                 Map<String, Object> officerMap = new HashMap<>();
-                for(DataSnapshot item : dataSnapshot.getChildren()){
+                for (DataSnapshot item : dataSnapshot.getChildren()) {
                     String key = item.getKey();
                     User user = item.getValue(User.class);
-                    if(user.getGrade().equals("일반")){
+                    if (user.getGrade().equals("일반")) {
                         user.setGrade("회원");
-                    }else{
+                    } else {
                         officerMap.put(key, user);
                     }
                     allMap.put(key, user);
@@ -91,6 +137,8 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
                 FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("userInfo").updateChildren(allMap);
                 FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").updateChildren(officerMap);
                 Toast.makeText(AdminActivity.this, "업데이트완료", Toast.LENGTH_SHORT).show();
+
+
             }
 
             @Override
@@ -113,7 +161,7 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
                     map.put(item.getKey(), null);
                 }
                 FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments").updateChildren(map);
-                Toast.makeText(AdminActivity.this, "지워진 채팅갯수"+dataSnapshot.getChildrenCount()+"개", Toast.LENGTH_SHORT).show();
+                Toast.makeText(AdminActivity.this, "지워진 채팅갯수" + dataSnapshot.getChildrenCount() + "개", Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -176,15 +224,15 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
                         }
                     }
                     list.put(sb.getName(), sb);
-                    if(sb.getGrade().equals("0")){
+                    if (sb.getGrade().equals("0")) {
                         normal++;
-                    }else{
+                    } else {
                         officer++;
                     }
                     total++;
                 }
                 FirebaseDatabase.getInstance().getReference().child("KCHA").updateChildren(list);
-                Toast.makeText(AdminActivity.this, "임원 : "+officer+"명,"+"회원 : "+normal+"명,"+"총원 : "+total+"명", Toast.LENGTH_SHORT).show();
+                Toast.makeText(AdminActivity.this, "임원 : " + officer + "명," + "회원 : " + normal + "명," + "총원 : " + total + "명", Toast.LENGTH_SHORT).show();
             }
 
         } catch (Exception e) {

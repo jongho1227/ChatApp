@@ -217,7 +217,7 @@ public class SelectGroupChatActivity extends AppCompatActivity {
                                                 intent.putExtra("shareUri", uri);
                                             }
 
-                                            ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(SelectGroupChatActivity.this, R.anim.fromright, R.anim.toleft);
+                                            ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(SelectGroupChatActivity.this, R.anim.frombottom, R.anim.totop);
                                             startActivity(intent, activityOptions.toBundle());
                                             finish();
                                         }

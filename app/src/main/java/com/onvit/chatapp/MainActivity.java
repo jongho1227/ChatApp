@@ -7,8 +7,12 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -18,10 +22,13 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.material.bottomnavigation.BottomNavigationItemView;
+import com.google.android.material.bottomnavigation.BottomNavigationMenuView;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
@@ -30,6 +37,7 @@ import com.onvit.chatapp.ad.ShoppingFragment;
 import com.onvit.chatapp.chat.ChatFragment;
 import com.onvit.chatapp.chat.SelectGroupChatActivity;
 import com.onvit.chatapp.contact.PeopleFragment;
+import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.notice.NoticeFragment;
 import com.onvit.chatapp.util.PreferenceManager;
@@ -40,10 +48,14 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private final static int PERMISSION_REQUEST_CODE = 1000;
+    BottomNavigationMenuView bottomNavigationMenuView;
     private FirebaseAuth firebaseAuth;
     private String text = null;
     private Uri uri = null;
     private User user;
+    private String uid;
+    private ValueEventListener valueEventListener;
+    private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
             finish();
         }
         user = getIntent().getParcelableExtra("user");
+        uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         PreferenceManager.setString(MainActivity.this, "name", user.getUserName());
         PreferenceManager.setString(MainActivity.this, "hospital", user.getHospital());
         PreferenceManager.setString(MainActivity.this, "phone", user.getTel());
@@ -98,10 +111,9 @@ public class MainActivity extends AppCompatActivity {
             intent1.putExtra("filePath", filePath);
             startActivity(intent1);
         }
-
+        bottomNavigationMenuView = (BottomNavigationMenuView) bottomNavigationView.getChildAt(0);
         requestPermission();
         passPushTokenToServer();
-
     }
 
 
@@ -193,6 +205,37 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        View v = bottomNavigationMenuView.getChildAt(2);
+        BottomNavigationItemView itemView = (BottomNavigationItemView) v;
+        final View badge = LayoutInflater.from(this).inflate(R.layout.notification_badge, itemView, true);
+        final TextView badgeView = badge.findViewById(R.id.badge);
+
+        valueEventListener = new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) { // 해당되는 chatrooms들의 키값들이 넘어옴.
+                int count = 0;
+                Log.d("호출", "ㅇㅇ");
+                for (final DataSnapshot item : dataSnapshot.getChildren()) {// normalChat, officerChat
+                    final LastChat lastChat = item.getValue(LastChat.class);
+                    count += Integer.parseInt(lastChat.getUsers().get(uid) + "");
+                }
+                if (count > 0) {
+                    String c = count + "";
+                    badgeView.setText(c);
+                    badgeView.setVisibility(View.VISIBLE);
+                } else {
+                    badgeView.setVisibility(View.GONE);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        };
+        databaseReference.child("lastChat").orderByChild("existUsers/" + uid).equalTo(true).addValueEventListener(valueEventListener);
+
+
     }
 
     void passPushTokenToServer() {
@@ -219,6 +262,9 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         getMenuInflater().inflate(R.menu.main_option_menu, menu);
+        if (user.getHospital().equals("개발자")) {
+            menu.findItem(R.id.admin).setVisible(true);
+        }
         return true;
     }
 
@@ -242,29 +288,18 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         } else if (item.getItemId() == R.id.admin) {
-            FirebaseDatabase.getInstance().getReference().child("Users").orderByChild("hospital").equalTo("개발자").addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    if (dataSnapshot.getChildrenCount() == 0) {
-                        Toast.makeText(MainActivity.this, "관리자만 사용할 수 있습니다.", Toast.LENGTH_SHORT).show();
-                    }
-                    for (DataSnapshot item : dataSnapshot.getChildren()) {
-                        User dUser = item.getValue(User.class);
-                        if (user.getUid().equals(dUser.getUid())) {
-                            Intent intent = new Intent(MainActivity.this, AdminActivity.class);
-                            startActivity(intent);
-                        } else {
-                        }
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                }
-            });
+            Intent intent = new Intent(MainActivity.this, AdminActivity.class);
+            startActivity(intent);
         }
 
         return true;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (valueEventListener != null) {
+            databaseReference.child("lastChat").removeEventListener(valueEventListener); // 이벤트 제거.
+        }
     }
 }

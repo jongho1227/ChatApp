@@ -52,6 +52,8 @@ public class NoticeFragment extends Fragment {
     private NoticeFragmentRecyclerAdapter noticeFragmentRecyclerAdapter;
     private RecyclerView recyclerView;
     private ArrayList<String> registration_ids = new ArrayList<>();
+    private ValueEventListener valueEventListener;
+
 
     public NoticeFragment() {
 
@@ -77,7 +79,7 @@ public class NoticeFragment extends Fragment {
         noticeFragmentRecyclerAdapter = new NoticeFragmentRecyclerAdapter(noticeLists);
         recyclerView.setAdapter(noticeFragmentRecyclerAdapter);
 
-        firebaseDatabase.child("Notice").addValueEventListener(new ValueEventListener() {
+        valueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 noticeLists.clear();
@@ -95,7 +97,9 @@ public class NoticeFragment extends Fragment {
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
-        });
+        };
+
+        firebaseDatabase.child("Notice").addValueEventListener(valueEventListener);
         firebaseDatabase.child("Users").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -124,12 +128,21 @@ public class NoticeFragment extends Fragment {
                 Intent intent = new Intent(getActivity(), NoticeActivity.class);
                 intent.putExtra("insert", "insert");
                 intent.putStringArrayListExtra("userList", registration_ids);
-                ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(view.getContext(), R.anim.fromright, R.anim.toleft);
+                ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(view.getContext(), R.anim.frombottom, R.anim.totop);
                 startActivity(intent, activityOptions.toBundle());
             }
         });
 
         return view;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if(valueEventListener!=null){
+            firebaseDatabase.child("Notice").removeEventListener(valueEventListener);
+        }
+
     }
 
     class NoticeFragmentRecyclerAdapter extends RecyclerView.Adapter<NoticeFragmentRecyclerAdapter.NoticeViewHolder> {
@@ -250,7 +263,7 @@ public class NoticeFragment extends Fragment {
                         intent.putStringArrayListExtra("img", list);
                         intent.putStringArrayListExtra("deleteKey", deletekey);
                     }
-                    ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(view.getContext(), R.anim.fromright, R.anim.toleft);
+                    ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(view.getContext(), R.anim.frombottom, R.anim.totop);
                     dialog.dismiss();
                     startActivity(intent, activityOptions.toBundle());
                 }

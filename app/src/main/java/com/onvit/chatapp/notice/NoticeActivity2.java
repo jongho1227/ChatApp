@@ -126,7 +126,7 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
     @Override
     public void onBackPressed() {
         finish();
-        overridePendingTransition(R.anim.fromleft, R.anim.toright);//화면 사라지는 방향
+        overridePendingTransition(R.anim.fromtop, R.anim.tobottom);//화면 사라지는 방향
     }
 
     @Override
@@ -167,7 +167,7 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
                 intent.putStringArrayListExtra("img", list);
                 intent.putStringArrayListExtra("deleteKey", delete);
                 intent.putParcelableArrayListExtra("imgList", imgList);
-                ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(this, R.anim.fromright, R.anim.toleft);
+                ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(this, R.anim.frombottom, R.anim.totop);
                 startActivity(intent, activityOptions.toBundle());
                 finish();
                 break;

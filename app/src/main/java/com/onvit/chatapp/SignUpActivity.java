@@ -397,12 +397,16 @@ public class SignUpActivity extends AppCompatActivity {
                                 if (user.getGrade().equals("임원")) {
                                     map.put("normalChat/userInfo/" + uid, user);
                                     map.put("officerChat/userInfo/" + uid, user);
+
                                     map.put("normalChat/users/" + uid, false);
                                     map.put("officerChat/users/" + uid, false);
+
                                     map2.put("normalChat/chatName", "회원채팅방");
                                     map2.put("officerChat/chatName", "임원채팅방");
+
                                     map2.put("normalChat/users/" + uid, 0);
                                     map2.put("officerChat/users/" + uid, 0);
+
                                     map2.put("normalChat/existUsers/" + uid, true);
                                     map2.put("officerChat/existUsers/" + uid, true);
                                 } else {

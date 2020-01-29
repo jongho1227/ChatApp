@@ -29,7 +29,9 @@
         android:roundIcon="@mipmap/ic_kcha_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.StatusBar">
-        <activity android:name=".AdminActivity"></activity>
+        <activity android:name=".chat.ChatSetInfoActivity"
+            android:theme="@style/Theme.InfoDialog"/>
+        <activity android:name=".AdminActivity" />
         <activity android:name=".notice.NoticeActivity2" />
         <activity
             android:name=".notice.NoticeActivity"

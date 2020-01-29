@@ -175,7 +175,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
     @Override
     public void onBackPressed() {
         finish();
-        overridePendingTransition(R.anim.fromleft, R.anim.toright);//화면 사라지는 방향
+        overridePendingTransition(R.anim.fromtop, R.anim.tobottom);//화면 사라지는 방향
     }
 
     @Override
@@ -507,7 +507,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
 
         RequestBody requestBody = RequestBody.create(gson.toJson(notificationModel), MediaType.parse("application/json; charset=utf8"));
         Request request = new Request.Builder().header("Content-Type", "apllication/json")
-                .addHeader("Authorization", "key=AAAArdglT3o:APA91bFnw2-330VSRLDfJa-w21cy8C4AbOtC6xpg2WKHs-oV-T8TjFk6wJiFBX7TRr-LQTuVQHTMsoZQ8pc0zt91JZWmrg8jaOKtJLJcl4adp4cfz557ft8KgJhXmGw_rQ_J6hydzapw")
+                .addHeader("Authorization", "key=AAAAjkt-NJ4:APA91bF8vZrFrqLIRfpPwE_WvUrGj4aQEP8xF9_UvvG4MZXA2iV-o7NPAJdGGYhlMl_JXP8KQiF_YWQeVhT0DE8BSppJUfYazA0QR7tjozAdpzMvX9xLSHJ1mkOevT4_OlohvlOYS_e-")
                 .url("https://fcm.googleapis.com/fcm/send")
                 .post(requestBody)
                 .build();

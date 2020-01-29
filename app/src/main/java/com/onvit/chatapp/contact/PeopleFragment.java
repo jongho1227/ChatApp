@@ -62,7 +62,9 @@ public class PeopleFragment extends Fragment {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        FirebaseDatabase.getInstance().getReference().child("Users").removeEventListener(valueEventListener);
+        if(valueEventListener!=null){
+            FirebaseDatabase.getInstance().getReference().child("Users").removeEventListener(valueEventListener);
+        }
     }
 
     class PeopleFragmentRecyclerAdapter extends RecyclerView.Adapter<PeopleFragmentRecyclerAdapter.CustomViewHolder> {

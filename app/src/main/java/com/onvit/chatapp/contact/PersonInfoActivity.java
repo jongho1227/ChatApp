@@ -125,7 +125,7 @@ public class PersonInfoActivity extends AppCompatActivity implements View.OnClic
     @Override
     public void onBackPressed() {
         finish();
-        overridePendingTransition(R.anim.fromleft, R.anim.toright);//화면 사라지는 방향
+        overridePendingTransition(R.anim.fromtop, R.anim.tobottom);//화면 사라지는 방향
     }
 
     @Override
