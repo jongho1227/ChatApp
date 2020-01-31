@@ -107,7 +107,6 @@ public class PeopleFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull CustomViewHolder holder, final int position) {
-            Log.d("홀더붙는순서(연락처)", position+"");
             //position0번 부터 붙음
 
             holder.lineText.setVisibility(View.GONE);

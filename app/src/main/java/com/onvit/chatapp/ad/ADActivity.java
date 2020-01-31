@@ -33,8 +33,6 @@ public class ADActivity extends AppCompatActivity {
 
         imageView = findViewById(R.id.ad_img_view);
         String img = getIntent().getStringExtra("ad");
-//        imgTask = new ImgTask();
-//        imgTask.execute(img);
         Glide.with(this).load(Uri.parse(img)).placeholder(R.drawable.ic_shopping).apply(new RequestOptions().fitCenter()).into(imageView);
     }
 

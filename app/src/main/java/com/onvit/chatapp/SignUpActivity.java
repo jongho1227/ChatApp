@@ -208,7 +208,7 @@ public class SignUpActivity extends AppCompatActivity {
             Bitmap newBitmap = rotateBitmap(bitmap, orientation);
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+            newBitmap.compress(Bitmap.CompressFormat.JPEG, 99, baos);
             final byte[] bytes = baos.toByteArray();
             final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("userImages").child(user.getUid());
             UploadTask uploadTask = storageReference.putBytes(bytes); // firebaseStorage에 uid이름으로 프로필 사진 저장
@@ -341,7 +341,6 @@ public class SignUpActivity extends AppCompatActivity {
                         if (imageUri != null) {
                             Bitmap bitmap = resize(SignUpActivity.this, imageUri, 500);
                             ExifInterface exif = null;
-                            Log.d("이미지파일", filePath);
                             try {
                                 exif = new ExifInterface(filePath);
                             } catch (IOException e) {
@@ -351,7 +350,7 @@ public class SignUpActivity extends AppCompatActivity {
                             Bitmap newBitmap = rotateBitmap(bitmap, orientation);
 
                             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                            newBitmap.compress(Bitmap.CompressFormat.JPEG, 99, baos);
                             final byte[] bytes = baos.toByteArray();
                             final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("userImages").child(uid);
                             UploadTask uploadTask = storageReference.putBytes(bytes); // firebaseStorage에 uid이름으로 프로필 사진 저장
@@ -397,16 +396,12 @@ public class SignUpActivity extends AppCompatActivity {
                                 if (user.getGrade().equals("임원")) {
                                     map.put("normalChat/userInfo/" + uid, user);
                                     map.put("officerChat/userInfo/" + uid, user);
-
                                     map.put("normalChat/users/" + uid, false);
                                     map.put("officerChat/users/" + uid, false);
-
                                     map2.put("normalChat/chatName", "회원채팅방");
                                     map2.put("officerChat/chatName", "임원채팅방");
-
                                     map2.put("normalChat/users/" + uid, 0);
                                     map2.put("officerChat/users/" + uid, 0);
-
                                     map2.put("normalChat/existUsers/" + uid, true);
                                     map2.put("officerChat/existUsers/" + uid, true);
                                 } else {
@@ -514,7 +509,6 @@ public class SignUpActivity extends AppCompatActivity {
 
             int width = options.outWidth;
             int height = options.outHeight;
-            Log.d("사진크기", "width=" + width + "/height=" + height);
             int samplesize = 1;
 
             while (true) {//2번
@@ -524,7 +518,7 @@ public class SignUpActivity extends AppCompatActivity {
                 height /= 2;
                 samplesize *= 2;
             }
-            Log.d("사진크기", "width=" + width + "/height=" + height + "/samplesize=" + samplesize);
+
 
             options.inSampleSize = samplesize;
             Bitmap bitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri), null, options); //3번
@@ -542,7 +536,6 @@ public class SignUpActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             imageUri = data.getData();//이미지 경로 원본
-            Log.d("이미지 경로", imageUri.toString());
             profileImageView.setImageURI(imageUri);
             filePath = getRealPathFromURI(imageUri);
             if (filePath == null) {

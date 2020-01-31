@@ -84,7 +84,6 @@ public class NoticeFragment extends Fragment {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 noticeLists.clear();
                 for (DataSnapshot item : dataSnapshot.getChildren()) {
-                    Log.d("공지", item.toString());
                     Notice noticeList = item.getValue(Notice.class);
                     noticeList.setCode(item.getKey());
                     noticeLists.add(noticeList);
@@ -105,8 +104,6 @@ public class NoticeFragment extends Fragment {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (DataSnapshot item : dataSnapshot.getChildren()) {
                     User user = item.getValue(User.class);
-
-                    Log.d("메세지", user.toString());
                     if (user.getUid().equals(uid)) {
                         continue;
                     }
@@ -207,7 +204,6 @@ public class NoticeFragment extends Fragment {
                     firebaseDatabase.child("Users").orderByChild("uid").equalTo(noticeList.get(position).getUid()).addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            Log.d("유저", dataSnapshot.getChildrenCount() + "");
                             if (dataSnapshot.getChildrenCount() == 0) {
                                 Intent intent = new Intent(getActivity(), NoticeActivity2.class);
                                 intent.putExtra("profile", "noImg");
@@ -216,7 +212,6 @@ public class NoticeFragment extends Fragment {
                                 for (DataSnapshot item : dataSnapshot.getChildren()) {
                                     User user = item.getValue(User.class);
                                     Intent intent = new Intent(getActivity(), NoticeActivity2.class);
-                                    Log.d("유저", user.toString());
                                     if (user.getUserProfileImageUrl() != null) {
                                         intent.putExtra("profile", user.getUserProfileImageUrl());
                                     } else {

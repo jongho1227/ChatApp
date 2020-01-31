@@ -59,9 +59,9 @@ public class ChatFragment extends Fragment {
     private String uid;
     private ToggleButton btn;
     private List<String> userCount = new ArrayList<>();
+    private Map<String, Object> countMap = new HashMap<>();
 
     public ChatFragment() {
-
     }
 
     @Nullable
@@ -73,7 +73,6 @@ public class ChatFragment extends Fragment {
         activity.setSupportActionBar(chatToolbar);
         ActionBar actionBar = activity.getSupportActionBar();
         actionBar.setTitle("단체 채팅");
-
         btn = view.findViewById(R.id.vibrate_btn);
         btn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -116,8 +115,6 @@ public class ChatFragment extends Fragment {
     }
 
     class ChatRecyclerViewAdapter extends RecyclerView.Adapter<ChatRecyclerViewAdapter.ChatViewHolder> {
-        private Map<String, Object> countMap = new HashMap<>();
-
         public ChatRecyclerViewAdapter() {
             uid = FirebaseAuth.getInstance().getCurrentUser().getUid();// 클라이언트uid
             valueEventListener = new ValueEventListener() {
@@ -134,6 +131,7 @@ public class ChatFragment extends Fragment {
                         keys.add(item.getKey());// normalChat, officerChat 채팅방 이름.
                         count.add(lastChat.getUsers().get(uid) + ""); // 안읽은 숫자
                         userCount.add(lastChat.getExistUsers().size() + "");
+
                         countEventListener = new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -149,7 +147,6 @@ public class ChatFragment extends Fragment {
 
                     }
                     notifyDataSetChanged();
-
                 }
 
                 @Override
@@ -193,10 +190,26 @@ public class ChatFragment extends Fragment {
                 simpleDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
                 long unixTime = (long) chatModels.get(position).getTimestamp();
                 Date date = new Date(unixTime);
-                holder.textView_timestamp.setText(simpleDateFormat.format(date));
+                Date date2 = new Date();
+
+                SimpleDateFormat sd = new SimpleDateFormat("yyyyMMddHHmm");
+
+                String dS = sd.format(date);
+                String dS2 = sd.format(date2);
                 holder.textView_timestamp.setVisibility(View.VISIBLE);
-                holder.textView_timestamp2.setText(simpleDateFormat2.format(date));
                 holder.textView_timestamp2.setVisibility(View.VISIBLE);
+                if (dS2.substring(0, 8).equals(dS.substring(0, 8))) {
+                    if (Integer.parseInt(dS.substring(8)) < 1200) {
+                        holder.textView_timestamp.setText("오전");
+                        holder.textView_timestamp2.setText(simpleDateFormat2.format(date));
+                    } else {
+                        holder.textView_timestamp.setText("오후");
+                        holder.textView_timestamp2.setText(simpleDateFormat2.format(date));
+                    }
+                } else {
+                    holder.textView_timestamp.setText(simpleDateFormat.format(date));
+                    holder.textView_timestamp2.setText(simpleDateFormat2.format(date));
+                }
             }
 
             //안읽은 메세지 숫자

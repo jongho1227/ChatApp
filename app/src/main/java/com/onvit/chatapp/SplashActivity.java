@@ -56,15 +56,11 @@ public class SplashActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         firebaseAuth = FirebaseAuth.getInstance();
-//        firebaseAuth.signOut();
         mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
         FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
                 .setMinimumFetchIntervalInSeconds(0) // 한시간에 최대 한번 요청할 수 있음. 한시간의 캐싱타임을 가짐.
                 .build();
         mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
-
-
-        //다 메인으로 옮겨서 실행.
 
         mFirebaseRemoteConfig.fetchAndActivate()
                 .addOnCompleteListener(this, new OnCompleteListener<Boolean>() {
@@ -72,7 +68,6 @@ public class SplashActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<Boolean> task) {
                         if (task.isSuccessful()) {
                             boolean updated = task.getResult();
-                            Log.d("원격", "Config params updated: " + updated);
 
 
                         } else {
@@ -101,7 +96,6 @@ public class SplashActivity extends AppCompatActivity {
         } else {
             version = p.versionCode;
         }
-        Log.d("버전코드", version + "");
         if (versionCode != version) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage(updateMessage).setPositiveButton("확인", new DialogInterface.OnClickListener() {
@@ -137,7 +131,6 @@ public class SplashActivity extends AppCompatActivity {
             channel.setVibrationPattern(new long[]{0, 500}); // 진동없애는거? 삭제하고 다시 깔아야 적용.
             channel.enableVibration(true);
             notificationManager.createNotificationChannel(channel);
-
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -208,8 +201,6 @@ public class SplashActivity extends AppCompatActivity {
                                 Intent intent1 = new Intent(SplashActivity.this, MainActivity.class);
                                 uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
                                 final Uri convertUri = getConvertUri(uri);
-                                Log.d("이미지 공유", uri + "");
-                                Log.d("이미지 공유", convertUri + "");
                                 if (convertUri != null) {
                                     intent1.putExtra("shareUri", convertUri);
                                     intent1.putExtra("filePath", filePath);

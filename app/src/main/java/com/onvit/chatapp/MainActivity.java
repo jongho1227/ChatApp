@@ -214,7 +214,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) { // 해당되는 chatrooms들의 키값들이 넘어옴.
                 int count = 0;
-                Log.d("호출", "ㅇㅇ");
                 for (final DataSnapshot item : dataSnapshot.getChildren()) {// normalChat, officerChat
                     final LastChat lastChat = item.getValue(LastChat.class);
                     count += Integer.parseInt(lastChat.getUsers().get(uid) + "");

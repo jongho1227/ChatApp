@@ -57,7 +57,6 @@ public class LoginActivity extends AppCompatActivity {
 
         String logOut = getIntent().getStringExtra("logOut");
         if (logOut != null && logOut.equals("logOut")) {
-            Log.d("로그아웃", "00");
             firebaseAuth.signOut();
         }
 
@@ -109,7 +108,6 @@ public class LoginActivity extends AppCompatActivity {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
                 if (user != null) {
                     //로그인
-                    Log.d("로그아웃", "11");
                     FirebaseDatabase.getInstance().getReference().child("Users").addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -126,7 +124,6 @@ public class LoginActivity extends AppCompatActivity {
                                 }
                             }
                             if (user != null) {
-                                Log.d("로그아웃", "22");
                                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                                 intent.putExtra("user", user);
                                 intent.setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -134,7 +131,6 @@ public class LoginActivity extends AppCompatActivity {
                                 dialog.dismiss();
                                 finish();
                             } else {
-                                Log.d("로그아웃", "33");
                                 Toast.makeText(LoginActivity.this, "회원정보를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
                                 dialog.dismiss();
                             }

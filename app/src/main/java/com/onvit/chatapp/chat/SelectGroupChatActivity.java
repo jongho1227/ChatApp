@@ -21,10 +21,6 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.onvit.chatapp.LoginActivity;
-import com.onvit.chatapp.R;
-import com.onvit.chatapp.model.LastChat;
-import com.onvit.chatapp.model.ChatModel;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -32,6 +28,10 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.onvit.chatapp.LoginActivity;
+import com.onvit.chatapp.R;
+import com.onvit.chatapp.model.ChatModel;
+import com.onvit.chatapp.model.LastChat;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -45,9 +45,17 @@ public class SelectGroupChatActivity extends AppCompatActivity {
 
     private Toolbar chatToolbar;
     private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm");
+    private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM월dd일");
+    private SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
     private ValueEventListener valueEventListener;
     private FirebaseAuth firebaseAuth;
+    private List<String> userCount = new ArrayList<>();
+    private ValueEventListener countEventListener;
+    private List<LastChat> chatModels = new ArrayList<>();
+    private List<String> keys = new ArrayList<>();
+    private List<String> count = new ArrayList<>();
+    private Map<String, Object> countMap = new HashMap<>();
+    private String uid;
     private String text = null;
     private Uri uri = null;
 
@@ -59,7 +67,7 @@ public class SelectGroupChatActivity extends AppCompatActivity {
         firebaseAuth = FirebaseAuth.getInstance();
         setSupportActionBar(chatToolbar);
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setTitle("단체 채팅");
+        actionBar.setTitle("공유할 채팅방을 선택하세요.");
         if (firebaseAuth.getCurrentUser() == null) {
             Intent intent = new Intent(this, LoginActivity.class);
             firebaseAuth.signOut();
@@ -89,17 +97,13 @@ public class SelectGroupChatActivity extends AppCompatActivity {
         if (valueEventListener != null) {
             databaseReference.child("lastChat").removeEventListener(valueEventListener);
         }
+        if (countEventListener != null) {
+            databaseReference.child("groupChat").child("normalChat").child("comments").removeEventListener(countEventListener);
+            databaseReference.child("groupChat").child("officerChat").child("comments").removeEventListener(countEventListener);
+        }
     }
 
     class SelectGroupChatRecyclerAdapter extends RecyclerView.Adapter<SelectGroupChatRecyclerAdapter.CustomViewHolder> {
-
-        private List<LastChat> chatModels = new ArrayList<>();
-        private List<String> keys = new ArrayList<>();
-        private List<String> count = new ArrayList<>();
-        private Map<String, Object> countMap = new HashMap<>();
-        private String uid;
-        private ValueEventListener countEventListener;
-
 
         public SelectGroupChatRecyclerAdapter() {
             uid = FirebaseAuth.getInstance().getCurrentUser().getUid();// 클라이언트uid
@@ -109,16 +113,18 @@ public class SelectGroupChatActivity extends AppCompatActivity {
                     chatModels.clear();
                     count.clear();
                     keys.clear();
+                    userCount.clear();
+//                    Log.d("등급11", grade);
                     for (final DataSnapshot item : dataSnapshot.getChildren()) {// normalChat, officerChat
-                        LastChat lastChat = item.getValue(LastChat.class);
+                        final LastChat lastChat = item.getValue(LastChat.class);
                         chatModels.add(lastChat);// 채팅방 밖에 표시할 내용들.
                         keys.add(item.getKey());// normalChat, officerChat 채팅방 이름.
-                        count.add(lastChat.getUsers().get(uid) + ""); // 안읽은 숫자.
+                        count.add(lastChat.getUsers().get(uid) + ""); // 안읽은 숫자
+                        userCount.add(lastChat.getExistUsers().size() + "");
 
                         countEventListener = new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                Log.d("채팅갯수", dataSnapshot.getChildrenCount() + "");
                                 countMap.put(item.getKey(), dataSnapshot.getChildrenCount());
                             }
 
@@ -131,7 +137,6 @@ public class SelectGroupChatActivity extends AppCompatActivity {
 
                     }
                     notifyDataSetChanged();
-
                 }
 
                 @Override
@@ -139,7 +144,7 @@ public class SelectGroupChatActivity extends AppCompatActivity {
 
                 }
             };
-            databaseReference.child("lastChat").orderByChild("existUsers/"+uid).equalTo(true).addValueEventListener(valueEventListener);
+            databaseReference.child("lastChat").orderByChild("existUsers/" + uid).equalTo(true).addValueEventListener(valueEventListener);
         }
 
         @NonNull
@@ -151,28 +156,49 @@ public class SelectGroupChatActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull CustomViewHolder holder, final int position) {
-            Log.d("홀더붙는순서(채팅방)", position + "");
             //position0번 부터 붙음
 
             holder.textView_count.setVisibility(View.INVISIBLE);
             GradientDrawable gradientDrawable = (GradientDrawable) SelectGroupChatActivity.this.getDrawable(R.drawable.radius);
             holder.imageView.setBackground(gradientDrawable);
             holder.imageView.setClipToOutline(true);
+
+
             holder.textView_title.setText(chatModels.get(position).getChatName());
 
+            holder.textView_user_count.setText(userCount.get(position));
             //마지막으로 보낸 메세지
+
             String lastChat = chatModels.get(position).getLastChat();
             holder.textView_last_message.setText(lastChat);
-
             //보낸 시간
             if (chatModels.get(position).getTimestamp() == null) {
                 holder.textView_timestamp.setVisibility(View.INVISIBLE);
+                holder.textView_timestamp2.setVisibility(View.INVISIBLE);
             } else {
                 simpleDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
                 long unixTime = (long) chatModels.get(position).getTimestamp();
                 Date date = new Date(unixTime);
-                holder.textView_timestamp.setText(simpleDateFormat.format(date));
+                Date date2 = new Date();
+
+                SimpleDateFormat sd = new SimpleDateFormat("yyyyMMddHHmm");
+
+                String dS = sd.format(date);
+                String dS2 = sd.format(date2);
                 holder.textView_timestamp.setVisibility(View.VISIBLE);
+                holder.textView_timestamp2.setVisibility(View.VISIBLE);
+                if (dS2.substring(0, 8).equals(dS.substring(0, 8))) {
+                    if (Integer.parseInt(dS.substring(8)) < 1200) {
+                        holder.textView_timestamp.setText("오전");
+                        holder.textView_timestamp2.setText(simpleDateFormat2.format(date));
+                    } else {
+                        holder.textView_timestamp.setText("오후");
+                        holder.textView_timestamp2.setText(simpleDateFormat2.format(date));
+                    }
+                } else {
+                    holder.textView_timestamp.setText(simpleDateFormat.format(date));
+                    holder.textView_timestamp2.setText(simpleDateFormat2.format(date));
+                }
             }
 
             //안읽은 메세지 숫자
@@ -242,29 +268,6 @@ public class SelectGroupChatActivity extends AppCompatActivity {
 
         }
 
-//        private Uri getConvertUri(Uri uri) {
-//            try {
-//                File file = new File(Environment.getExternalStorageDirectory() + "/KCHA", System.currentTimeMillis() + ".jpeg");
-//                InputStream inputStream = getContentResolver().openInputStream(uri);
-//                if (inputStream != null) {
-//                    OutputStream outputStream = new FileOutputStream(file);
-//                    byte[] buf = new byte[1024];
-//                    int len;
-//                    while ((len = inputStream.read(buf)) > 0) {
-//                        outputStream.write(buf, 0, len);
-//                    }
-//                    outputStream.close();
-//                    inputStream.close();
-//                }
-//                if (file.length() > 0) {
-//                    return new Uri.Builder().scheme("file").path(file.getAbsolutePath()).build();
-//                }
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//            return null;
-//        }
-
         @Override
         public int getItemCount() {
             return chatModels.size();
@@ -277,6 +280,8 @@ public class SelectGroupChatActivity extends AppCompatActivity {
             public TextView textView_timestamp;
             public TextView textView_count;
             public CheckBox checkBox;
+            private TextView textView_timestamp2;
+            private TextView textView_user_count;
 
             public CustomViewHolder(View view) {
                 super(view);
@@ -285,7 +290,9 @@ public class SelectGroupChatActivity extends AppCompatActivity {
                 textView_last_message = view.findViewById(R.id.chatitem_textview_lastMessage);
                 textView_timestamp = view.findViewById(R.id.chatitem_textview_timestamp);
                 textView_count = view.findViewById(R.id.chatitem_textview_count);
+                textView_timestamp2 = view.findViewById(R.id.chatitem_textview_timestamp2);
                 checkBox = view.findViewById(R.id.frienditem_checkbox);
+                textView_user_count = view.findViewById(R.id.user_count);
             }
         }
     }

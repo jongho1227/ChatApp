@@ -115,6 +115,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class GroupMessageActivity extends AppCompatActivity implements View.OnClickListener {
+
     private final int readMoreChatCount = 100;
     private final int firstReadChatCount = 100;
     int i = 0; // 첫 화면 들어갈때 스크롤 위치 맨 아래로 내리기위함.
@@ -176,10 +177,6 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
 
         initSetting();
-        init();//메세지 입력했을때 처리 하는부분.
-        getMessageList();
-        keyboardController();
-
     }
 
 
@@ -204,24 +201,24 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     User user = item.getValue(User.class);
 //                    messageReadUsers.put(user.getUid(), false); // 읽은여부 판단.
                     users.put(item.getKey(), user);//방의 유저정보
-                    if(user.getUid().equals(uid)){
+                    if (user.getUid().equals(uid)) {
                         myInfo = user;
                         continue;
-                    }else{
+                    } else {
                         userinfolist.add(user);
                     }
                 }
                 Collections.sort(userinfolist);
-                userinfolist.add(0,myInfo);
+                userinfolist.add(0, myInfo);
                 String number = String.valueOf(users.size());
                 pCount.setText("채팅인원 : " + number + "명");
                 pCount.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
                         Intent intent = new Intent(GroupMessageActivity.this, ChatSetInfoActivity.class);
-                        getIntent().putExtra("on", "on");
+                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                         intent.putParcelableArrayListExtra("userInfo", (ArrayList<? extends Parcelable>) userinfolist);
-                        overridePendingTransition(R.anim.frombottom, R.anim.totop);
+                        overridePendingTransition(R.anim.fromright, R.anim.toleft);
                         startActivity(intent);
                     }
                 });
@@ -268,14 +265,17 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
 
         recyclerView = findViewById(R.id.groupMessageActivity_recyclerView);
-        recyclerView.post(new Runnable() {
+        recyclerView.postDelayed(new Runnable() {
             @Override
             public void run() {
                 mFirebaseAdapter = new GroupMessageRecyclerViewAdapter(users);
                 recyclerView.setLayoutManager(new LinearLayoutManager(GroupMessageActivity.this));
                 recyclerView.setAdapter(mFirebaseAdapter);
+                init();//메세지 입력했을때 처리 하는부분.
+                getMessageList();
+                keyboardController();
             }
-        });
+        }, 200);
         sendFile.setOnClickListener(this);
     }
 
@@ -520,7 +520,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         Bitmap newBitmap = rotateBitmap(bitmap, orientation);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        newBitmap.compress(Bitmap.CompressFormat.JPEG, 99, baos);
         byte[] bytes = baos.toByteArray();
 
         final ChatModel.Comment textComment = new ChatModel.Comment();
@@ -729,11 +729,11 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
             int width = options.outWidth;
             int height = options.outHeight;
-
+            Log.d("사진크기", "width=" + width + "/height=" + height);
             int samplesize = 1;
 
             while (true) {//2번
-                if (width / 2 < resize || height / 2 < resize) {
+                if (width / 2 < resize && height / 2 < resize) {
                     break;
                 }
 
@@ -741,7 +741,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                 height /= 2;
                 samplesize *= 2;
             }
-
+            Log.d("사진크기", "width=" + width + "/height=" + height + "/samplesize=" + samplesize);
 
             options.inSampleSize = samplesize;
             Bitmap bitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri), null, options); //3번
@@ -771,11 +771,13 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         notificationModel.data.text = message;
         notificationModel.data.tag = toRoom;
         notificationModel.data.click_action = "GroupMessage";
-
+        for (String a : registration_ids) {
+            Log.d("가나다라마바", a);
+        }
         Log.d("가나다라마바", message);
         RequestBody requestBody = RequestBody.create(gson.toJson(notificationModel), MediaType.parse("application/json; charset=utf8"));
         Request request = new Request.Builder().header("Content-Type", "apllication/json")
-                .addHeader("Authorization", "key=AAAAjkt-NJ4:APA91bF8vZrFrqLIRfpPwE_WvUrGj4aQEP8xF9_UvvG4MZXA2iV-o7NPAJdGGYhlMl_JXP8KQiF_YWQeVhT0DE8BSppJUfYazA0QR7tjozAdpzMvX9xLSHJ1mkOevT4_OlohvlOYS_e-")
+                .addHeader("Authorization", "key=AAAArdglT3o:APA91bFnw2-330VSRLDfJa-w21cy8C4AbOtC6xpg2WKHs-oV-T8TjFk6wJiFBX7TRr-LQTuVQHTMsoZQ8pc0zt91JZWmrg8jaOKtJLJcl4adp4cfz557ft8KgJhXmGw_rQ_J6hydzapw")
                 .url("https://fcm.googleapis.com/fcm/send")
                 .post(requestBody)
                 .build();
@@ -1226,11 +1228,9 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         if (accessChatMemberEventListener != null) {
             databaseReference.child("groupChat").child(toRoom).child("users").removeEventListener(accessChatMemberEventListener);
         }
-        if(getIntent().getStringExtra("on") == null){
-            Map<String, Object> map = new HashMap<>();
-            map.put(uid, false);
-            databaseReference.child("groupChat").child(toRoom).child("users").updateChildren(map);
-        }
+        Map<String, Object> map = new HashMap<>();
+        map.put(uid, false);
+        databaseReference.child("groupChat").child(toRoom).child("users").updateChildren(map);
     }
 
     //뒤로가기 눌렀을때

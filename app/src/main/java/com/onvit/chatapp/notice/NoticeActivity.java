@@ -133,7 +133,6 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                     imgPath.add(s);
                     try {
                         URL url = new URL(s);
-                        Log.d("주소", url + "");
                     } catch (MalformedURLException e) {
                         e.printStackTrace();
                     }
@@ -271,7 +270,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                     int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
                     Bitmap newBitmap = rotateBitmap(bitmap, orientation);
 
-                    newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                    newBitmap.compress(Bitmap.CompressFormat.JPEG, 99, baos);
                     byte[] bytes = baos.toByteArray();
                     uploadTask = storageReference.putBytes(bytes);
                 } else {
@@ -407,7 +406,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                 int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
                 Bitmap newBitmap = rotateBitmap(bitmap, orientation);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+                newBitmap.compress(Bitmap.CompressFormat.JPEG, 99, baos);
                 byte[] bytes = baos.toByteArray();
 
                 final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("Notice Img").child(userMessageKeyRef.getKey()).child(id);
@@ -431,9 +430,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                             imgUriList.put(id, imageUri);
                             flag[0]++;
                             tx.setText("이미지를 업로드 중입니다(" + flag[0] + "/" + imagesList.size() + ")");
-                            Log.d("이미지 업로드", flag[0] + "");
                             if (flag[0] == imagesList.size()) {
-                                Log.d("이미지 업로드", "시작");
                                 Notice notice = new Notice();
                                 notice.setTitle(title);
                                 notice.setContent(content);
@@ -473,7 +470,6 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
             notice.setTimestamp(date.getTime());
             notice.setName(PreferenceManager.getString(NoticeActivity.this, "name") + "(" + PreferenceManager.getString(NoticeActivity.this, "hospital") + ")");
             notice.setImg(imgUriList);
-            Log.d("등록", notice.toString());
             firebaseDatabase.child("Notice").push().setValue(notice).addOnSuccessListener(new OnSuccessListener<Void>() {
                 @Override
                 public void onSuccess(Void aVoid) {
@@ -646,8 +642,6 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
 
         @Override
         public void onBindViewHolder(@NonNull final NoticeViewHolder holder, final int position) {
-            Log.d("이미지", position + "");
-
             switch (noticeName) {
                 case "공지사항 등록":
                 case "공지사항 수정":

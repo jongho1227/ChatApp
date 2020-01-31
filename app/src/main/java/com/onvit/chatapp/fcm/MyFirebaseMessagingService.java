@@ -49,8 +49,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         if (remoteMessage.getNotification() != null) {
 
         }
-        Log.d("메세지", "111");
-        Log.d("메세지", remoteMessage.getData().toString());
         sendNotification(remoteMessage);
         final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         FirebaseDatabase.getInstance().getReference().child("lastChat").orderByChild("existUsers/" + uid).equalTo(true).addValueEventListener(new ValueEventListener() {
@@ -62,8 +60,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     count +=  chatList.getUsers().get(uid);
                 }
                 ShortcutBadger.applyCount(getApplicationContext(),count);
-                Log.d("채팅합", count+"");
-
             }
 
             @Override
@@ -74,25 +70,11 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
     @Override
     public void onNewToken(String token) {
-        Log.d(TAG, "Refreshed token: " + token);
-
-        // If you want to send messages to this application instance or
-        // manage this apps subscriptions on the server side, send the
-        // Instance ID token to your app server.
         sendRegistrationToServer(token);
     }
     private void sendRegistrationToServer(String token) {
-        // TODO: Implement this method to send token to your app server.
     }
-    //    private void scheduleJob() {
-//        // [START dispatch_job]
-//        OneTimeWorkRequest work = new OneTimeWorkRequest.Builder(MyWorker.class)
-//                .build();
-//        WorkManager.getInstance().beginWith(work).enqueue();
-//        // [END dispatch_job]
-//    }
     private void handleNow() {
-        Log.d(TAG, "Short lived task is done.");
     }
 
     private void sendNotification(RemoteMessage remoteMessage) {

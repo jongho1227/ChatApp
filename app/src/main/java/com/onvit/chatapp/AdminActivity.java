@@ -51,8 +51,8 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
             case R.id.updateBtn:
                 //회원들 정보 넣음.
                 insertExel();
-                updateInfo();
-                aaa();//엑셀에 표시된 등급에 맞게 수정하는 쿼리.
+//                updateInfo();
+//                aaa();//엑셀에 표시된 등급에 맞게 수정하는 쿼리.
                 break;
             case R.id.deleteChat:
                 final Date date = new Date();
@@ -156,7 +156,6 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Map<String, Object> map = new HashMap<>();
-                Log.d("삭제", dataSnapshot.getChildrenCount() + "");
                 for (DataSnapshot item : dataSnapshot.getChildren()) {
                     map.put(item.getKey(), null);
                 }
@@ -326,25 +325,5 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
 
             }
         });
-    }
-
-    private void resetPassword() {
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        String emailAddress = FirebaseAuth.getInstance().getCurrentUser().getEmail();
-        auth.sendPasswordResetEmail(emailAddress).addOnCompleteListener(new OnCompleteListener<Void>() {
-            @Override
-            public void onComplete(@NonNull Task<Void> task) {
-                Toast.makeText(AdminActivity.this, "메일이 발송되었습니다.", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-    }
-
-    private void hashPassword() {
-        String salt = SHA256Util.generateSalt();
-        String newPassword = SHA256Util.getEncrypt("비번", salt);
-
-        Log.d("비번", newPassword);
-
     }
 }
