@@ -133,14 +133,6 @@ public class NoticeFragment extends Fragment {
         return view;
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if(valueEventListener!=null){
-            firebaseDatabase.child("Notice").removeEventListener(valueEventListener);
-        }
-
-    }
 
     class NoticeFragmentRecyclerAdapter extends RecyclerView.Adapter<NoticeFragmentRecyclerAdapter.NoticeViewHolder> {
         List<Notice> noticeList;

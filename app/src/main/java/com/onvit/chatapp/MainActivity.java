@@ -7,7 +7,6 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -20,6 +19,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
 
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomnavigation.BottomNavigationItemView;
@@ -34,6 +34,8 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.iid.InstanceIdResult;
 import com.onvit.chatapp.ad.ShoppingFragment;
+import com.onvit.chatapp.admin.AdminActivity;
+import com.onvit.chatapp.admin.InviteActivity;
 import com.onvit.chatapp.chat.ChatFragment;
 import com.onvit.chatapp.chat.SelectGroupChatActivity;
 import com.onvit.chatapp.contact.PeopleFragment;
@@ -56,7 +58,10 @@ public class MainActivity extends AppCompatActivity {
     private String uid;
     private ValueEventListener valueEventListener;
     private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-
+    Fragment notice = new NoticeFragment();
+    Fragment people = new PeopleFragment();
+    Fragment shop = new ShoppingFragment();
+    Fragment chat = new ChatFragment();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -85,18 +90,17 @@ public class MainActivity extends AppCompatActivity {
             public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
                 switch (menuItem.getItemId()) {
                     case R.id.action_notice:
-                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new NoticeFragment()).commitAllowingStateLoss();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, notice).commitAllowingStateLoss();
                         return true;
                     case R.id.action_people:
-                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new PeopleFragment()).commitAllowingStateLoss();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, people).commitAllowingStateLoss();
                         return true;
                     case R.id.action_chat:
-                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new ChatFragment()).commitAllowingStateLoss();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, chat).commitAllowingStateLoss();
                         return true;
                     case R.id.action_account:
-                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new ShoppingFragment()).commitAllowingStateLoss();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, shop).commitAllowingStateLoss();
                         return true;
-
                 }
                 return false;
             }
@@ -200,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         if (getIntent().getStringExtra("tag") != null) {
             if (getIntent().getStringExtra("tag").equals("normalChat") || getIntent().getStringExtra("tag").equals("officerChat")) {
-                getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new ChatFragment()).commitAllowingStateLoss();
+                getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, chat).commitAllowingStateLoss();
                 getIntent().removeExtra("tag");
             }
         }
@@ -243,14 +247,12 @@ public class MainActivity extends AppCompatActivity {
             public void onSuccess(InstanceIdResult instanceIdResult) {
                 String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
                 String token = instanceIdResult.getToken();
-                Map<String, Object> map = new HashMap<>();
-                map.put("pushToken", token);
-
-                FirebaseDatabase.getInstance().getReference().child("Users").child(uid).updateChildren(map);
-                FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("userInfo").child(uid).updateChildren(map);
+                user.setPushToken(token);
+                FirebaseDatabase.getInstance().getReference().child("Users").child(uid).setValue(user);
+                FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("userInfo").child(uid).setValue(user);
 
                 if (user.getGrade().equals("임원")) {
-                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").child(uid).updateChildren(map);
+                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").child(uid).setValue(user);;
                 }
             }
         });
@@ -263,6 +265,9 @@ public class MainActivity extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.main_option_menu, menu);
         if (user.getHospital().equals("개발자")) {
             menu.findItem(R.id.admin).setVisible(true);
+        }
+        if(user.getHospital().equals("개발자") || user.getHospital().equals("사무국장")){
+            menu.findItem(R.id.invite).setVisible(true);
         }
         return true;
     }
@@ -288,6 +293,9 @@ public class MainActivity extends AppCompatActivity {
             finish();
         } else if (item.getItemId() == R.id.admin) {
             Intent intent = new Intent(MainActivity.this, AdminActivity.class);
+            startActivity(intent);
+        } else if (item.getItemId() == R.id.invite) {
+            Intent intent = new Intent(MainActivity.this, InviteActivity.class);
             startActivity(intent);
         }
 

@@ -94,6 +94,7 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
 
         list = getIntent().getStringArrayListExtra("img");
         deleteKey = getIntent().getStringArrayListExtra("deleteKey");
+        Log.d("삭제", deleteKey.toString());
         if (list.size() > 0) {
             for (String s : list) {
                 if (!s.equals("noImg")) {
@@ -219,6 +220,8 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
 
         @Override
         public void onBindViewHolder(@NonNull final NoticeActivity2.NoticeActivityRecyclerAdapter2.NoticeViewHolder2 holder, final int position) {
+            Log.d("이미지", position + "");
+
             holder.text.setText("클릭하여 확대");
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override

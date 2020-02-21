@@ -84,17 +84,21 @@ public class SplashActivity extends AppCompatActivity {
     void versionCheck() {
         long versionCode = mFirebaseRemoteConfig.getLong("version_code");
         String updateMessage = mFirebaseRemoteConfig.getString("update_message");
-        PackageInfo p = null;
-        try {
-            p = getPackageManager().getPackageInfo(getPackageName(), 0);
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
-        long version = 0;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            version = p.getLongVersionCode();
-        } else {
-            version = p.versionCode;
+
+        String serverKey = mFirebaseRemoteConfig.getString("serverKey");
+        PreferenceManager.setString(SplashActivity.this, "serverKey", serverKey);
+
+            PackageInfo p = null;
+            try {
+                p = getPackageManager().getPackageInfo(getPackageName(), 0);
+            } catch (PackageManager.NameNotFoundException e) {
+                e.printStackTrace();
+            }
+            long version = 0;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                version = p.getLongVersionCode();
+            } else {
+                version = p.versionCode;
         }
         if (versionCode != version) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -122,13 +126,16 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void createNotificationChannel() {
+
+        //알림 온&오프, 각 다른 알림채널 만들어서 적용시켜야함.
+
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(getString(R.string.vibrate),
                     "진동",
                     NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setVibrationPattern(new long[]{0, 500}); // 진동없애는거? 삭제하고 다시 깔아야 적용.
+            channel.setVibrationPattern(new long[]{0, 500});
             channel.enableVibration(true);
             notificationManager.createNotificationChannel(channel);
         }
@@ -137,13 +144,35 @@ public class SplashActivity extends AppCompatActivity {
             NotificationChannel channel = new NotificationChannel(getString(R.string.noVibrate),
                     "무음",
                     NotificationManager.IMPORTANCE_LOW);
-            channel.setVibrationPattern(new long[]{0}); // 진동없애는거? 삭제하고 다시 깔아야 적용.
+            channel.setVibrationPattern(new long[]{0});
             channel.enableVibration(true);
             notificationManager.createNotificationChannel(channel);
         }
     }
 
     private void initSplash() {
+
+        FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Map<String, Object> map = new HashMap<>();
+                for(DataSnapshot item : dataSnapshot.getChildren()){
+                    User user = item.getValue(User.class);
+                    if(user.getGrade().equals("회원")){
+                        map.put(item.getKey(),null);
+                    }else{
+                        map.put(item.getKey(),user);
+                    }
+                }
+                FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").updateChildren(map);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
 
         if (PreferenceManager.getString(SplashActivity.this, "name") == null || PreferenceManager.getString(SplashActivity.this, "name").equals("")
                 || FirebaseAuth.getInstance().getCurrentUser() == null) {

@@ -110,19 +110,98 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
+                    <!--투표-->
+                    <LinearLayout
+                        android:id="@+id/layout_vote"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="10dp"
+                        android:visibility="gone">
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:padding="5dp"
+                            android:layout_marginEnd="3dp"
+                            android:src="@drawable/ic_event_black_24dp"/>
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+                            <TextView
+                                android:id="@+id/vote_title"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="투표제목"
+                                android:textSize="18dp"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="15dp"
+                                android:textColor="@color/black"
+                                android:maxLines="2"
+                                android:ellipsize="end"/>
+                            <TextView
+                                android:id="@+id/go_to_vote"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="투표하러가기"
+                                android:textSize="14dp"
+                                android:textStyle="bold"
+                                android:textColor="@color/black"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+
+                    <!--파일보내는거-->
+                    <LinearLayout
+                        android:id="@+id/layout_file"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:padding="10dp"
+                        android:visibility="gone">
+                        <ImageView
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:padding="5dp"
+                            android:layout_marginEnd="3dp"
+                            android:src="@drawable/file_width"/>
+                        <LinearLayout
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical">
+                            <TextView
+                                android:id="@+id/layout_file_name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="파일이름"
+                                android:textSize="18sp"
+                                android:textColor="@color/black"
+                                android:textStyle="bold"
+                                android:maxLines="2"
+                                android:ellipsize="end"/>
+                            <TextView
+                                android:id="@+id/layout_file_extension"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="파일확장자"
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:textSize="13sp"
+                                android:textColor="#A6A6A6"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                    <!--파일보내는거 여기까지-->
+
                     <ImageView
                         android:id="@+id/messageItem_image"
-                        android:layout_width="200dp"
-                        android:layout_height="200dp"
-                        android:maxWidth="220dp"
-                        android:maxHeight="400dp"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:visibility="gone" />
                     <TextView
                         android:id="@+id/messageItem_textView_thumbnail"
-                        android:layout_width="200dp"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:linksClickable="true"
-                        android:maxWidth="220dp"
                         android:padding="8dp"
                         android:maxLines="1"
                         android:ellipsize="end"
@@ -130,17 +209,29 @@
                         android:textColor="@color/black"
                         android:visibility="gone" />
                     <TextView
+                        android:id="@+id/messageItem_textView_thumbnail_address"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:linksClickable="true"
+                        android:padding="8dp"
+                        android:layout_marginTop="-8dp"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:textSize="13sp"
+                        android:textColor="#A6A6A6"
+                        android:visibility="gone" />
+                    <TextView
                         android:id="@+id/messageItem_textView_message"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:linksClickable="true"
                         android:longClickable="true"
                         android:textColorLink="#0100FF"
                         android:autoLink="web|email|phone"
-                        android:maxWidth="220dp"
                         android:padding="8dp"
+                        android:lineSpacingExtra="5dp"
                         android:text="메세지"
-                        android:textSize="18sp"
+                        android:textSize="20sp"
                         android:textColor="@color/black"
                         android:textStyle="bold"
                         android:visibility="gone"/>

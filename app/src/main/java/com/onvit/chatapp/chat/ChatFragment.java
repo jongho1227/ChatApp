@@ -102,17 +102,6 @@ public class ChatFragment extends Fragment {
         return view;
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (valueEventListener != null) {
-            databaseReference.child("lastChat").removeEventListener(valueEventListener);
-        }
-        if (countEventListener != null) {
-            databaseReference.child("groupChat").child("normalChat").child("comments").removeEventListener(countEventListener);
-            databaseReference.child("groupChat").child("officerChat").child("comments").removeEventListener(countEventListener);
-        }
-    }
 
     class ChatRecyclerViewAdapter extends RecyclerView.Adapter<ChatRecyclerViewAdapter.ChatViewHolder> {
         public ChatRecyclerViewAdapter() {

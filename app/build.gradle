@@ -7,8 +7,8 @@ android {
         applicationId "com.onvit.chatapp"
         minSdkVersion 21
         targetSdkVersion 28
-        versionCode 19
-        versionName "1.1.9"
+        versionCode 20
+        versionName "1.2.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -42,4 +42,6 @@ dependencies {
     implementation 'com.github.vansikrishna:Multimager:1.0.8'
     implementation 'org.jsoup:jsoup:1.11.3'
     implementation "me.leolin:ShortcutBadger:1.1.22@aar"
+    implementation 'com.karumi:dexter:5.0.0'
+    implementation 'com.github.mahimrocky:EventCalender:v1.0.0'
 }

@@ -17,14 +17,11 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.method.LinkMovementMethod;
-import android.text.style.ClickableSpan;
-import android.text.style.UnderlineSpan;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Patterns;
 import android.view.Gravity;
@@ -33,6 +30,7 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -55,6 +53,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.tasks.Continuation;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -64,17 +63,22 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
+import com.onvit.chatapp.BuildConfig;
 import com.onvit.chatapp.LoginActivity;
 import com.onvit.chatapp.R;
+import com.onvit.chatapp.chat.vote.VoteActivity;
 import com.onvit.chatapp.contact.PersonInfoActivity;
 import com.onvit.chatapp.model.ChatModel;
+import com.onvit.chatapp.model.Img;
 import com.onvit.chatapp.model.NotificationModel;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.PreferenceManager;
+import com.onvit.chatapp.util.Utiles;
 import com.vlk.multimager.activities.GalleryActivity;
 import com.vlk.multimager.utils.Constants;
 import com.vlk.multimager.utils.Image;
@@ -116,8 +120,8 @@ import okhttp3.Response;
 
 public class GroupMessageActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private final int readMoreChatCount = 100;
-    private final int firstReadChatCount = 100;
+    private final int readMoreChatCount = 300;
+    private final int firstReadChatCount = 500;
     int i = 0; // 첫 화면 들어갈때 스크롤 위치 맨 아래로 내리기위함.
     int c = 0;
     Map<String, User> users = new HashMap<>();
@@ -134,10 +138,11 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
     int last = 0;
     int commentCount = 0;
     String uriText;
+    int pWidth, pHeight;
     private Toolbar chatToolbar;
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HH:mm");
     private SimpleDateFormat chatDateFormat = new SimpleDateFormat("yyyy.MM.dd HH:mm");
-    private SimpleDateFormat changeDateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 E요일");
+    private SimpleDateFormat changeDateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 E요일", Locale.KOREA);
     private DatabaseReference databaseReference;
     private ChildEventListener valueEventListener;
     private ValueEventListener accessChatMemberEventListener;
@@ -153,7 +158,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
     private RelativeLayout relativeLayout;
     private String shareText;
     private Uri shareUri;
-
+    private List<Img> img_list = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -218,6 +223,9 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                         Intent intent = new Intent(GroupMessageActivity.this, ChatSetInfoActivity.class);
                         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                         intent.putParcelableArrayListExtra("userInfo", (ArrayList<? extends Parcelable>) userinfolist);
+                        intent.putParcelableArrayListExtra("imglist", (ArrayList<? extends Parcelable>) img_list);
+                        intent.putExtra("room", toRoom);
+                        getIntent().putExtra("on", "on");
                         overridePendingTransition(R.anim.fromright, R.anim.toleft);
                         startActivity(intent);
                     }
@@ -249,7 +257,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     if (getIntent().getParcelableExtra("shareUri") != null) {
                         shareUri = getIntent().getParcelableExtra("shareUri");
                         getIntent().removeExtra("shareUri");
-                        sendImg(shareUri);
+                        if (createImgSize(shareUri)) return;
                     }
                 }
 
@@ -302,12 +310,8 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                 //키보드 올라오면 채팅창 위로 올라가게.
                 super.onScrolled(recyclerView, dx, dy);
                 LinearLayoutManager layoutManager = LinearLayoutManager.class.cast(recyclerView.getLayoutManager());
-                int firstVisible = layoutManager.findFirstVisibleItemPosition();
+                int firstVisible = layoutManager.findFirstCompletelyVisibleItemPosition();
                 last = layoutManager.findLastVisibleItemPosition(); // 화면 맨 아래 채팅 인덱스
-
-                Log.d("채팅 인덱스", "첫번째" + firstVisible);
-                Log.d("채팅 인덱스", "마지막" + last);
-
 
                 if (newComments.size() > firstReadChatCount - 1) {
                     if (firstVisible == 0) {
@@ -317,9 +321,6 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                 if (newComments.size() - last < 3) {
                     relativeLayout.setVisibility(View.GONE);
                 }
-                Log.d("채팅 인덱스", "갯수" + mFirebaseAdapter.getItemCount());
-
-                Log.d("들오오", "라스트" + last);
 
                 if (mFirebaseAdapter.getItemCount() == last + 1 && newComments.get(last).message.length() < 550) {
                     Log.d("들오오", "ㅇㅇ");
@@ -341,12 +342,15 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                 .limitToLast(readMoreChatCount).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.d("불러오는채팅갯수", dataSnapshot.getChildrenCount() + "");
+                Log.d("불러오는채팅갯수", newComments.get(0).timestamp + "");
                 //채팅없을때 리턴
                 if (dataSnapshot.getValue() == null) {
                     return;
 
                     //맨위로 올라갔을때 리턴.
                 } else if (dataSnapshot.getChildrenCount() == 1) {
+                    Log.d("맨끝", "ㅇㅇㅇㅇㅇ");
                     return;
                 } else {
                     int l = 0;//채팅 붙이는 인덱스
@@ -362,6 +366,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                         }
 
                         ChatModel.Comment comment = item.getValue(ChatModel.Comment.class);
+                        comment.setKey(item.getKey());
                         //내가없는 채팅은 안가지고옴
                         if (comment.existUser.get(uid) == null) {
                             k++;
@@ -415,27 +420,9 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             comment.type = "text"; // 채팅 친 종류
             comment.readUsers = messageReadUsers; // 읽은사람들
             comment.existUser = existUserGroupChat;
-            uriText = text;
-            boolean b = Patterns.WEB_URL.matcher(text).matches();
-            if (b) {
-                Log.d("링크", b + "");
-                Log.d("텍스트", uriText);
-                if (text.startsWith("www.")) {
-                    uriText = "https://" + uriText;
-                    Log.d("텍스트1", uriText);
-                } else if (text.startsWith("https://www.")) {
-                    Log.d("텍스트2", uriText);
-                } else if (text.startsWith("https://")) {
-                    Log.d("텍스트3", uriText);
-                } else if (text.startsWith("http://")) {
-                    uriText = uriText.replace("http://", "https://");
-                    Log.d("텍스트4", uriText);
-                } else {
-                    uriText = "https://www." + uriText;
-                    Log.d("텍스트5", uriText);
-                }
-                new Description().execute(uriText);
-            }
+
+            new Description().execute(text);
+
             databaseReference.child("groupChat").child(toRoom).child("comments").push().setValue(comment);
 
             databaseReference.child("groupChat").child(toRoom).child("users").addListenerForSingleValueEvent(new ValueEventListener() {
@@ -452,7 +439,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
                         }
                     }
-                    sendFcm(registration_ids, comment.message);
+                    Utiles.sendFcm(registration_ids, comment.message, GroupMessageActivity.this, toRoom);
                 }
 
                 @Override
@@ -497,35 +484,15 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         }
     }
 
-    private void sendImg(Uri fileUri) {
-        String filePath;
-        Bitmap bitmap = resize(this, fileUri, 500);
-        if (getIntent().getStringExtra("filePath") != null) {
-            filePath = getIntent().getStringExtra("filePath");
-        } else {
-            filePath = getRealPathFromURI(fileUri);
-        }
-        if (filePath == null || filePath.equals("")) {
-            Toast.makeText(GroupMessageActivity.this, "이미지를 보낼 수 없습니다.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        ExifInterface exif = null;
-        try {
-            exif = new ExifInterface(filePath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-        Bitmap newBitmap = rotateBitmap(bitmap, orientation);
+    private void sendImg(Bitmap newBitmap, final int width, final int height, Uri uri) {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        newBitmap.compress(Bitmap.CompressFormat.JPEG, 99, baos);
+        newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
         byte[] bytes = baos.toByteArray();
 
         final ChatModel.Comment textComment = new ChatModel.Comment();
         textComment.uid = uid;
-        textComment.message = String.valueOf(fileUri);
+        textComment.message = width + "/" + height + "/" + String.valueOf(uri);
         textComment.timestamp = new Date().getTime();
         textComment.readUsers = messageReadUsers;
         textComment.type = "img";
@@ -559,7 +526,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     String imageUri = taskResult.toString();
                     final ChatModel.Comment comment = new ChatModel.Comment();
                     comment.uid = uid;
-                    comment.message = imageUri;
+                    comment.message = width + "/" + height + "/" + imageUri;
                     comment.timestamp = date.getTime();
                     comment.readUsers = messageReadUsers;
                     comment.type = "img";
@@ -611,7 +578,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                                             registration_ids.add(users.get(item.getKey()).getPushToken());
                                         }
                                     }
-                                    sendFcm(registration_ids, "사진을 보냈습니다.");
+                                    Utiles.sendFcm(registration_ids, "사진을 보냈습니다.", GroupMessageActivity.this, toRoom);
                                 }
 
                                 @Override
@@ -627,6 +594,10 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
     }
 
     private void sendThumnail(String uri) {
+        if (inputStream == null) {
+            Log.d("스트림없음", "dd");
+            return;
+        }
         final DatabaseReference userMessageKeyRef = databaseReference.child("groupChat").child(toRoom).child("comments").push();
         final String[] sp = uri.split("!!@@!!");
         final ChatModel.Comment textComment = new ChatModel.Comment();
@@ -656,8 +627,8 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             public void onComplete(@NonNull final Task<Uri> task) {
                 if (task.isSuccessful()) {
                     //이미지 저장 성공
+
                     final Date date = new Date();
-                    final List<String> registration_ids = new ArrayList<>();
                     Uri taskResult = task.getResult();
                     String imageUri = taskResult.toString();
                     final ChatModel.Comment comment = new ChatModel.Comment();
@@ -720,15 +691,18 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
     }
 
     //사진 사이즈(용량)조절
-    private Bitmap resize(Context context, Uri uri, int resize) {
+    private Map<String, Object> resize(Context context, Uri uri, int resize) {
         Bitmap resizeBitmap = null;
-
+        Map<String, Object> map = null;
         BitmapFactory.Options options = new BitmapFactory.Options();
         try {
             BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri), null, options); // 1번
 
             int width = options.outWidth;
             int height = options.outHeight;
+
+
+
             Log.d("사진크기", "width=" + width + "/height=" + height);
             int samplesize = 1;
 
@@ -746,55 +720,20 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             options.inSampleSize = samplesize;
             Bitmap bitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri), null, options); //3번
             resizeBitmap = bitmap;
+            pWidth = width;
+            pHeight = height;
+
+            map = new HashMap<>();
+            map.put("bitmap", resizeBitmap);
+            map.put("width", width);
+            map.put("height", height);
 
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        return resizeBitmap;
+
+        return map;
     }
-
-    //fcm보내는 부분
-    void sendFcm(List<String> registration_ids, String message) {
-        Gson gson = new Gson();
-        Log.d("가나다라마바", "11111");
-        String userName = PreferenceManager.getString(GroupMessageActivity.this, "name");
-        NotificationModel notificationModel = new NotificationModel();
-        notificationModel.registration_ids = registration_ids;
-//        notificationModel.notification.title = userName;
-//        notificationModel.notification.text = message;
-//        notificationModel.notification.tag = toRoom;
-//        notificationModel.notification.click_action = "GroupMessage";
-        if (message.length() > 30) {
-            message = message.substring(0, 30) + "...";
-        }
-        notificationModel.data.title = userName;
-        notificationModel.data.text = message;
-        notificationModel.data.tag = toRoom;
-        notificationModel.data.click_action = "GroupMessage";
-        for (String a : registration_ids) {
-            Log.d("가나다라마바", a);
-        }
-        Log.d("가나다라마바", message);
-        RequestBody requestBody = RequestBody.create(gson.toJson(notificationModel), MediaType.parse("application/json; charset=utf8"));
-        Request request = new Request.Builder().header("Content-Type", "apllication/json")
-                .addHeader("Authorization", "key=AAAArdglT3o:APA91bFnw2-330VSRLDfJa-w21cy8C4AbOtC6xpg2WKHs-oV-T8TjFk6wJiFBX7TRr-LQTuVQHTMsoZQ8pc0zt91JZWmrg8jaOKtJLJcl4adp4cfz557ft8KgJhXmGw_rQ_J6hydzapw")
-                .url("https://fcm.googleapis.com/fcm/send")
-                .post(requestBody)
-                .build();
-        OkHttpClient okHttpClient = new OkHttpClient();
-        okHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NotNull Call call, @NotNull IOException e) {
-
-            }
-
-            @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-
-            }
-        });
-    }
-
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
@@ -813,34 +752,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     public void onClick(DialogInterface dialog, int which) {
                         if (which == 0) {
                             checker = "image";
-                            if (getSharedPreferences(getPackageName(), MODE_PRIVATE).getInt("check", 0) == 0) {
-                                AlertDialog.Builder builder = new AlertDialog.Builder(GroupMessageActivity.this);
-                                builder.setTitle("사진은 한번에 한장씩 \n 보낼 수 있습니다.");
-                                String[] check = {"다시보지않기"};
-                                boolean[] checkedItems = {false};
-                                builder.setMultiChoiceItems(check, checkedItems, new DialogInterface.OnMultiChoiceClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which, boolean isChecked) {
-                                        if (isChecked) {
-                                            getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putInt("check", 1).apply();
-                                        } else {
-                                            getSharedPreferences(getPackageName(), MODE_PRIVATE).edit().putInt("check", 0).apply();
-                                        }
-                                    }
-                                });
-                                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                    @Override
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        picture();
-                                    }
-                                });
-                                builder.setNegativeButton("Cancel", null);
-                                AlertDialog d = builder.create();
-                                d.show();
-                            } else {
-                                picture();
-                            }
-
+                            picture();
                         }
                         if (which == 1) {
                             checker = "PDF";
@@ -949,7 +861,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                                 String fileUri = taskResult.toString();
                                 final ChatModel.Comment comment = new ChatModel.Comment();
                                 comment.uid = uid;
-                                comment.message = "파일을 보냈습니다\n" + fileName + fileUri;
+                                comment.message = fileName + fileUri;
                                 comment.timestamp = date.getTime();
                                 comment.readUsers = messageReadUsers;
                                 comment.type = "file";
@@ -1001,7 +913,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                                                         registration_ids.add(users.get(item.getKey()).getPushToken());
                                                     }
                                                 }
-                                                sendFcm(registration_ids, "파일을 보냈습니다.");
+                                                Utiles.sendFcm(registration_ids, "파일을 보냈습니다.", GroupMessageActivity.this, toRoom);
                                             }
 
                                             @Override
@@ -1020,14 +932,43 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
             } else if (checker.equals("image")) {
                 List<Image> imagesList = data.getParcelableArrayListExtra(Constants.KEY_BUNDLE_LIST);
-                Image image = imagesList.get(0);
-                Uri uri = image.uri;
-                sendImg(uri);
+                for (Image i : imagesList) {
+                    Uri uri = i.uri;
+                    if (createImgSize(uri)) return;
+
+                }
             } else {
                 Toast.makeText(this, "Error : Nothing Selected", Toast.LENGTH_SHORT).show();
             }
 
         }
+    }
+
+    private boolean createImgSize(Uri uri) {
+        String filePath;
+        Map<String, Object> map = resize(this, uri, 1000);
+        Bitmap bitmap = (Bitmap) map.get("bitmap");
+        if (getIntent().getStringExtra("filePath") != null) {
+            filePath = getIntent().getStringExtra("filePath");
+        } else {
+            filePath = getRealPathFromURI(uri);
+        }
+        if (filePath == null || filePath.equals("")) {
+            Toast.makeText(GroupMessageActivity.this, "이미지를 보낼 수 없습니다.", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        ExifInterface exif = null;
+        try {
+            exif = new ExifInterface(filePath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+        Bitmap newBitmap = rotateBitmap(bitmap, orientation);
+        int width = (int) map.get("width");
+        int height = (int) map.get("height");
+        sendImg(newBitmap, width, height, uri);
+        return false;
     }
 
     private String getRealPathFromURI(Uri fileUri) {
@@ -1057,8 +998,26 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                 //누군가가 채팅방으로 들어오면 그사람이 안읽은 메세지들이 업데이트 되는데 그건 onChildChanged에서 처리해야 된다.
                 c++;
                 ChatModel.Comment comment_modify = dataSnapshot.getValue(ChatModel.Comment.class);
-
+                comment_modify.setKey(dataSnapshot.getKey());
                 //화면에 뿌리는 코멘트.
+
+                if(comment_modify.getType().equals("img")){
+                    Img i = new Img();
+                    i.setName(users.get(comment_modify.getUid()).getUserName());
+                    String uri;
+                    if(comment_modify.message.startsWith("http")){
+                        uri = comment_modify.message;
+                    }else{
+                        int firstIndex = comment_modify.message.indexOf("/");
+                        int secondIndex = comment_modify.message.indexOf("/", firstIndex + 1);
+                        uri = comment_modify.message.substring(secondIndex + 1);
+                    }
+                    i.setUri(uri);
+                    String time = String.valueOf((long)comment_modify.getTimestamp());
+                    i.setTime(time);
+                    img_list.add(i);
+                }
+
 
                 newComments.add(comment_modify);
 
@@ -1118,8 +1077,12 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                             nameText.setText(users.get(newComments.get(newComments.size() - 1).uid).getUserName());
                             if (newComments.get(newComments.size() - 1).type.equals("img")) {
                                 messageText.setText("사진을 보냈습니다.");
-                            } else {
+                            } else if (newComments.get(newComments.size() - 1).type.equals("file")) {
+                                messageText.setText("파일을 보냈습니다.");
+                            } else if (newComments.get(newComments.size() - 1).type.equals("text")) {
                                 messageText.setText(newComments.get(newComments.size() - 1).message);
+                            } else {
+                                messageText.setText("링크를 보냈습니다.");
                             }
 
                             relativeLayout.setOnClickListener(new View.OnClickListener() {
@@ -1217,6 +1180,12 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
     }
 
     @Override
+    protected void onPause() {
+        super.onPause();
+        recyclerView.removeOnLayoutChangeListener(onLayoutChangeListener);
+    }
+
+    @Override
     protected void onDestroy() {
         super.onDestroy();
         if (valueEventListener != null) {
@@ -1262,7 +1231,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         if (getIntent().getParcelableExtra("shareUri") != null) {
             shareUri = getIntent().getParcelableExtra("shareUri");
             getIntent().removeExtra("shareUri");
-            sendImg(shareUri);
+            if (createImgSize(shareUri)) return;
         }
     }
 
@@ -1270,47 +1239,96 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
         @Override
         protected String doInBackground(String... strings) {
+            String rText = strings[0].replaceAll(System.getProperty("line.separator"), " ");
 
+            Log.d("나누기", rText);
+
+            String[] sText = rText.split(" ");
+            int checkLink = 0;
+            for (int i = 0; i < sText.length; i++) {
+                if (checkLink == 1) {
+                    break;
+                }
+                if (!sText[i].equals("")) {
+                    Log.d("나누기", sText[i]);
+                    uriText = sText[i];
+                    boolean b = Patterns.WEB_URL.matcher(uriText).matches();
+                    if (b) {
+                        checkLink++;
+                        if (uriText.startsWith("www.")) {
+                            uriText = "https://" + uriText;
+                            Log.d("텍스트1", uriText);
+                        } else if (uriText.startsWith("https://www.")) {
+                            Log.d("텍스트2", uriText);
+                        } else if (uriText.startsWith("https://")) {
+                            Log.d("텍스트3", uriText);
+                        } else if (uriText.startsWith("http://")) {
+                            uriText = uriText.replace("http://", "https://");
+                            Log.d("텍스트4", uriText);
+                        } else {
+                            uriText = "https://www." + uriText;
+                            Log.d("텍스트5", uriText);
+                        }
+                    }
+                }
+            }
             try {
                 String uri = null;
                 String content = null;
-                if (strings[0].contains("youtube")) {
+                if (uriText.contains("youtube")) {
                     Log.d("유튜브", "dd");
-                    int index = strings[0].lastIndexOf("watch?v=");
-                    uri = strings[0].substring(index + 8);
+                    int index = uriText.lastIndexOf("watch?v=");
+                    uri = uriText.substring(index + 8);
                     String newUri = "https://img.youtube.com/vi/" + uri + "/0.jpg";
                     Log.d("유튜브", newUri);
                     URL url = new URL(newUri);
                     inputStream = (InputStream) url.getContent();
-                    Document doc = Jsoup.connect(strings[0]).get();
+                    Document doc = Jsoup.connect(uriText).get();
                     Element tag = doc.selectFirst("title");
                     content = tag.html();
-                    return newUri + "!!@@!!" + content + "!!@@!!" + strings[0];
+                    return newUri + "!!@@!!" + content + "!!@@!!" + uriText;
                 } else {
                     Log.d("유튜브", "dss");
-                    Document doc = Jsoup.connect(strings[0]).get();
+                    Document doc = Jsoup.connect(uriText).get();
                     Elements ogTags = doc.select("meta[property^=og:]");
                     if (ogTags.size() > 0) {
+                        int imgC = 0;
+                        int conC = 0;
                         for (int i = 0; i < ogTags.size(); i++) {
                             Element tag = ogTags.get(i);
                             String text = tag.attr("property");
                             if (text.equals("og:image")) {
-                                uri = tag.attr("content");
-                                if (!tag.attr("content").startsWith("https:")) {
-                                    uri = "https:" + uri;
+                                if (imgC == 1) {
+                                    continue;
                                 }
+                                imgC++;
+                                uri = tag.attr("content");
+
+                                if (!tag.attr("content").startsWith("https")) {
+                                    if (tag.attr("content").startsWith("http")) {
+                                        uri = tag.attr("content").replace("http", "https");
+                                    } else {
+                                        uri = "https:" + uri;
+                                    }
+                                }
+                                Log.d("통과됨", uri + "");
                                 URL url = new URL(uri);
                                 inputStream = (InputStream) url.getContent();
 
                             } else if (text.equals("og:title")) {
+                                if (conC == 1) {
+                                    continue;
+                                }
+                                conC++;
                                 content = tag.attr("content");
+                                Log.d("통과됨 제목", content);
                             }
                         }
-                        String splite = uri + "!!@@!!" + content + "!!@@!!" + strings[0];
+                        String splite = uri + "!!@@!!" + content + "!!@@!!" + uriText;
                         return splite;
                     }
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
 
@@ -1320,6 +1338,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         @Override
         protected void onPostExecute(String s) {
             if (s != null) {
+                Log.d("최종 보내는값", s);
                 sendThumnail(s);
             }
         }
@@ -1328,6 +1347,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
     class GroupMessageRecyclerViewAdapter extends RecyclerView.Adapter<GroupMessageRecyclerViewAdapter.groupViewHolder> {
 
         Map<String, User> users;
+
 
         public GroupMessageRecyclerViewAdapter(Map<String, User> users) {
             this.users = users;
@@ -1348,6 +1368,8 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             Log.d("순서", "onBindViewHolder");
             holder.linearLayout_change_date.setVisibility(View.GONE);
 
+            Log.d("타입", newComments.get(position).type);
+
             //채팅 안읽은 숫자 표시
             holder.textView_readCounter_left.setVisibility(View.INVISIBLE);
             holder.textView_readCounter_right.setVisibility(View.INVISIBLE);
@@ -1358,12 +1380,19 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             holder.linearLayout_my.setVisibility(View.GONE);
             holder.linearLayout_other.setVisibility(View.GONE);
 
+            //투표보낼때 쓰는 뷰
+            holder.layout_vote.setVisibility(View.GONE);
+
             //이미지보낼때 쓰는 뷰
             holder.imageView.setVisibility(View.GONE);
+
             //텍스트보낼때 쓰는 뷰
             holder.textView_message.setVisibility(View.GONE);
-
+            holder.textView_message.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
             holder.textView_thumb.setVisibility(View.GONE);
+            holder.textView_thumb_address.setVisibility(View.GONE);
+
+            holder.layout_file.setVisibility(View.GONE);
 
             //메세지 보낸 시간.
             long unixTime = (long) newComments.get(position).timestamp;
@@ -1371,6 +1400,11 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             simpleDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
             String time = simpleDateFormat.format(date);
             changeDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+
+            DisplayMetrics metrics = new DisplayMetrics();
+            WindowManager windowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
+            windowManager.getDefaultDisplay().getMetrics(metrics);
+
             if (position > 0) {
                 long preTime = (long) newComments.get(position - 1).timestamp;
                 long nowTime = (long) newComments.get(position).timestamp;
@@ -1403,41 +1437,21 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     holder.textView_message.setVisibility(View.VISIBLE);
                     holder.textView_message.setText(newComments.get(position).message);
                     holder.textView_message.setBackgroundResource(R.drawable.sender_message_layout);
+                    holder.textView_message.setMaxWidth(metrics.widthPixels - metrics.widthPixels / 3);
                     //복사 및 공유 기능
                     longClick(holder);
 
                     //이미지를 보냈을때
                 } else if (newComments.get(position).type.equals("img")) {
-                    holder.imageView.setVisibility(View.VISIBLE);
-                    //이미지 처리하는 부분
-                    Glide.with(holder.itemView.getContext()).load(newComments.get(position).message).placeholder(R.drawable.ic_base_img_24dp).apply(new RequestOptions().fitCenter()).into(holder.imageView);
-                    GradientDrawable gradientDrawable = (GradientDrawable) GroupMessageActivity.this.getDrawable(R.drawable.radius);
-                    holder.imageView.setBackground(gradientDrawable);
-                    holder.imageView.setClipToOutline(true);
-
-                    imgDownLoad(holder, newComments.get(position).message, position);
-                    //공유 기능.
-                    imgLongClick(holder, newComments.get(position).message);
+                    drawImg(holder, position, metrics);
 
                 } else if (newComments.get(position).type.equals("file")) {
                     String me = "me";
-                    getFile(holder, position, me);
-
-                    //복사 및 공유 기능
-//                    longClick(holder);
+                    getFile(holder, position, me, metrics);
+                } else if(newComments.get(position).type.equals("vote")){
+                    getVote(holder, position);
                 } else {
-                    holder.imageView.setVisibility(View.VISIBLE);
-                    holder.textView_thumb.setVisibility(View.VISIBLE);
-                    holder.textView_thumb.setText(newComments.get(position).type);
-                    holder.textView_thumb.setBackgroundResource(R.drawable.thumb_messages_layout);
-                    //이미지 처리하는 부분
-                    Glide.with(holder.itemView.getContext()).load(newComments.get(position).message).placeholder(R.drawable.ic_base_img_24dp).apply(new RequestOptions().centerCrop()).into(holder.imageView);
-                    GradientDrawable gradientDrawable = (GradientDrawable) GroupMessageActivity.this.getDrawable(R.drawable.rectangle);
-                    holder.imageView.setBackground(gradientDrawable);
-                    holder.imageView.setClipToOutline(true);
-                    int index = newComments.get(position).type.lastIndexOf("https://");
-                    String uri = newComments.get(position).type.substring(index);
-                    linkClick(holder.itemView, uri);
+                    drawThumnail(holder, position, metrics);
                 }
 
                 holder.linearLayout_to.setVisibility(View.INVISIBLE);
@@ -1483,41 +1497,119 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     holder.textView_message.setVisibility(View.VISIBLE);
                     holder.textView_message.setBackgroundResource(R.drawable.receiver_messages_layout);
                     holder.textView_message.setText(newComments.get(position).message);
-
+                    holder.textView_message.setMaxWidth(metrics.widthPixels - metrics.widthPixels / 3);
                     longClick(holder);
                     //이미지 보냈을때
                 } else if (newComments.get(position).type.equals("img")) {
-
-                    holder.imageView.setVisibility(View.VISIBLE);
-                    Glide.with(holder.itemView.getContext()).load(newComments.get(position).message).placeholder(R.drawable.ic_base_img_24dp).apply(new RequestOptions().fitCenter()).into(holder.imageView);
-                    GradientDrawable gradientDrawable = (GradientDrawable) GroupMessageActivity.this.getDrawable(R.drawable.radius);
-                    holder.imageView.setBackground(gradientDrawable);
-                    holder.imageView.setClipToOutline(true);
-                    imgDownLoad(holder, newComments.get(position).message, position);
-                    imgLongClick(holder, newComments.get(position).message);
+                    drawImg(holder, position, metrics);
                 } else if (newComments.get(position).type.equals("file")) {
                     String other = "other";
-                    getFile(holder, position, other);
+                    getFile(holder, position, other, metrics);
 //                    longClick(holder);
+                }else if(newComments.get(position).type.equals("vote")){
+                    getVote(holder, position);
                 } else {
-                    holder.imageView.setVisibility(View.VISIBLE);
-                    holder.textView_thumb.setVisibility(View.VISIBLE);
-                    holder.textView_thumb.setText(newComments.get(position).type);
-                    holder.textView_thumb.setBackgroundResource(R.drawable.thumb_messages_layout);
-                    //이미지 처리하는 부분
-                    Glide.with(holder.itemView.getContext()).load(newComments.get(position).message).placeholder(R.drawable.ic_base_img_24dp).apply(new RequestOptions().centerCrop()).into(holder.imageView);
-                    GradientDrawable gradientDrawable = (GradientDrawable) GroupMessageActivity.this.getDrawable(R.drawable.rectangle);
-                    holder.imageView.setBackground(gradientDrawable);
-                    holder.imageView.setClipToOutline(true);
-                    int index = newComments.get(position).type.lastIndexOf("https://");
-                    String uri = newComments.get(position).type.substring(index);
-                    linkClick(holder.itemView, uri);
+                    drawThumnail(holder, position, metrics);
                 }
                 holder.linearlayout_main.setGravity(Gravity.LEFT);
                 setReadCounter(position, holder.textView_readCounter_right);
                 holder.linearLayout_other.setVisibility(View.VISIBLE);
                 holder.textView_othertimestamp.setText(time);
             }
+        }
+
+        private void getVote(groupViewHolder holder, final int position) {
+            holder.layout_vote.setVisibility(View.VISIBLE);
+            holder.layout_vote.setBackgroundResource(R.drawable.receiver_messages_layout);
+            holder.vote_title.setText(newComments.get(position).message.split("!@#!@#")[0]);
+            holder.layout_vote.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    final String vote_key = newComments.get(position).getKey();
+                    Intent intent = new Intent(GroupMessageActivity.this, VoteActivity.class);
+                    getIntent().putExtra("on","on");
+                    intent.putExtra("key", vote_key);
+                    intent.putExtra("room", toRoom);
+                    long time = Long.parseLong(newComments.get(position).message.split("!@#!@#")[1]);
+
+                    long today = new Date().getTime();
+
+                    if(time-today<0){
+                        intent.putExtra("flag", "over");
+                    }else{
+                        intent.putExtra("flag", "ing");
+                    }
+                    startActivity(intent);
+                }
+            });
+        }
+
+        private void drawThumnail(@NonNull groupViewHolder holder, int position, DisplayMetrics metrics) {
+            holder.imageView.setVisibility(View.VISIBLE);
+            holder.textView_thumb_address.setVisibility(View.VISIBLE);
+            holder.textView_thumb.setVisibility(View.VISIBLE);
+            holder.textView_thumb.setText(newComments.get(position).type);
+
+            holder.textView_thumb.setBackgroundResource(R.drawable.thumb_messages_layout);
+            LinearLayout.LayoutParams param = (LinearLayout.LayoutParams) holder.imageView.getLayoutParams();
+            LinearLayout.LayoutParams param2 = (LinearLayout.LayoutParams) holder.textView_thumb.getLayoutParams();
+            param.width = metrics.widthPixels - metrics.widthPixels * 2 / 5;
+            param.height = 2 * param.width / 3;
+            param2.width = param.width;
+            //이미지 처리하는 부분
+
+            int u = newComments.get(position).message.lastIndexOf("https");
+            int t = newComments.get(position).type.lastIndexOf("https");
+            String thum = newComments.get(position).message.substring(u);
+            String ad = newComments.get(position).type.substring(t);
+            holder.textView_thumb_address.setText(ad);
+
+            Glide.with(holder.itemView.getContext()).load(thum).placeholder(R.drawable.ic_base_img_24dp).apply(new RequestOptions().centerCrop()).into(holder.imageView);
+            GradientDrawable gradientDrawable = (GradientDrawable) GroupMessageActivity.this.getDrawable(R.drawable.rectangle);
+            holder.imageView.setBackground(gradientDrawable);
+            holder.imageView.setClipToOutline(true);
+            gradientDrawable = (GradientDrawable) GroupMessageActivity.this.getDrawable(R.drawable.rectangle_bottom);
+            holder.textView_thumb_address.setBackground(gradientDrawable);
+            int index = newComments.get(position).type.lastIndexOf("https://");
+            String uri = newComments.get(position).type.substring(index);
+            linkClick(holder.imageView, holder.textView_thumb, holder.textView_thumb_address, uri);
+        }
+
+        private void drawImg(@NonNull groupViewHolder holder, int position, DisplayMetrics metrics) {
+            holder.imageView.setVisibility(View.VISIBLE);
+            String uri;
+            LinearLayout.LayoutParams param = (LinearLayout.LayoutParams) holder.imageView.getLayoutParams();
+            if (!newComments.get(position).message.startsWith("https")) {
+                int firstIndex = newComments.get(position).message.indexOf("/");
+                int secondIndex = newComments.get(position).message.indexOf("/", firstIndex + 1);
+                int width = Integer.parseInt(newComments.get(position).message.substring(0, firstIndex));
+                int height = Integer.parseInt(newComments.get(position).message.substring(firstIndex + 1, secondIndex));
+                uri = newComments.get(position).message.substring(secondIndex + 1);
+
+                //이미지 처리하는 부분
+                if (width < metrics.widthPixels - metrics.widthPixels * 4 / 7) {
+                    param.width = metrics.widthPixels - metrics.widthPixels * 4 / 7;
+                    param.height = param.width * height / width;
+                } else if (width >= metrics.widthPixels - metrics.widthPixels * 4 / 7 && width < metrics.widthPixels - metrics.widthPixels * 2 / 7) {
+                    param.width = width;
+                    param.height = height;
+                } else {
+                    param.width = metrics.widthPixels - metrics.widthPixels * 2 / 7;
+                    param.height = param.width * height / width;
+                }
+            } else {
+                param.width = metrics.widthPixels - metrics.widthPixels * 3 / 7;
+                param.height = param.width;
+                uri = newComments.get(position).message;
+            }
+
+            Glide.with(holder.itemView.getContext()).load(uri).placeholder(R.drawable.ic_base_img_24dp).override(param.width, param.height).into(holder.imageView);
+            GradientDrawable gradientDrawable = (GradientDrawable) GroupMessageActivity.this.getDrawable(R.drawable.radius);
+            holder.imageView.setBackground(gradientDrawable);
+            holder.imageView.setClipToOutline(true);
+            imgDownLoad(holder, uri, position);
+            //공유 기능.
+            imgLongClick(holder, uri);
         }
 
         private void autolink(TextView v, final boolean b) {
@@ -1533,8 +1625,22 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             });
         }
 
-        private void linkClick(View v, final String uri) {
+        private void linkClick(View v, View v2, View v3, final String uri) {
             v.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+                    startActivity(intent);
+                }
+            });
+            v2.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
+                    startActivity(intent);
+                }
+            });
+            v3.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
@@ -1543,52 +1649,99 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             });
         }
 
-        private void getFile(@NonNull groupViewHolder holder, int position, String identify) {
-            holder.textView_message.setVisibility(View.VISIBLE);
+        private void getFile(@NonNull groupViewHolder holder, final int position, String identify, DisplayMetrics metrics) {
+
+            holder.layout_file.setVisibility(View.VISIBLE);
             final String message = newComments.get(position).message;
             final int lastIndex = message.lastIndexOf("https://");
-            ClickableSpan clickableSpan = new ClickableSpan() {
+
+            String[] extension = message.substring(0, lastIndex).split("\\.");
+            final String ext = extension[extension.length - 1];
+            String file = "종류 : " + ext;
+            holder.layout_file_name.setText(message.substring(0, lastIndex));
+            holder.layout_file_name.setMaxWidth(metrics.widthPixels - metrics.widthPixels * 3 / 5);
+            holder.layout_file_extension.setText(file);
+
+            holder.layout_file.setClickable(true);
+            holder.layout_file.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onClick(View view) {//
+                public void onClick(View view) {
                     try {
-                        Intent intent = new Intent(Intent.ACTION_VIEW);
-                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                         if (message.contains(".pdf")) {
+                            Intent intent = new Intent(Intent.ACTION_VIEW);
+                            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
                             intent.setDataAndType(Uri.parse(message.substring(lastIndex)), "application/pdf");
+                            startActivity(intent);
                         } else {
-                            intent.setDataAndType(Uri.parse(message.substring(lastIndex)), "application/*");
+
+                            //외부앱 파일 접근할시 fileprovider써야함. 외부sd저장소 등 접근하려면 file_path.xml에 root설정.
+
+                            File path = Environment.getExternalStorageDirectory();
+                            File dir = new File(path + "/KCHA/DownloadFile");
+                            dir.mkdirs();
+                            String filename = message.substring(0, lastIndex);
+                            final File file = new File(dir, filename);
+                            FirebaseStorage.getInstance().getReference().child("Document Files/" + newComments.get(position).key + "." + ext)
+                                    .getFile(file).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
+                                @Override
+                                public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
+                                    Toast.makeText(GroupMessageActivity.this, "파일을 다운받았습니다.", Toast.LENGTH_SHORT).show();
+                                    try {
+                                        Uri uri = FileProvider.getUriForFile(GroupMessageActivity.this, BuildConfig.APPLICATION_ID + ".fileprovider", file);
+                                        Intent intent = new Intent(Intent.ACTION_VIEW);
+                                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                        if (ext.equals("hwp")) {
+                                            intent.setDataAndType(uri, "application/haansofthwp");
+                                        } else if (ext.contains("xls")) {
+                                            intent.setDataAndType(uri, "application/vnd.ms-excel");
+                                        } else {
+                                            intent.setDataAndType(uri, "application/*");
+                                        }
+                                        startActivity(intent);
+                                    } catch (Exception e) {
+                                        e.printStackTrace();
+                                        Toast.makeText(GroupMessageActivity.this, "설치된 뷰어가 없어 파일을 열 수 없습니다.", Toast.LENGTH_SHORT).show();
+                                    }
+                                }
+                            }).addOnFailureListener(new OnFailureListener() {
+                                @Override
+                                public void onFailure(@NonNull Exception e) {
+                                    Toast.makeText(GroupMessageActivity.this, "파일을 받을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                                }
+                            });
                         }
-                        startActivity(intent);
+
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Toast.makeText(GroupMessageActivity.this, "파일을 열 수 없습니다. 뷰어을 설치해 주세요.", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(GroupMessageActivity.this, "파일을 열 수 없습니다.", Toast.LENGTH_SHORT).show();
                     }
                 }
-            };
-            SpannableString spannableString = new SpannableString(message.substring(0, lastIndex));
-            spannableString.setSpan(clickableSpan, 9, lastIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            spannableString.setSpan(new UnderlineSpan(), 9, lastIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-//                    spannableString.setSpan(new ForegroundColorSpan(Color.parseColor("#FF00DD")), 9, lastIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            holder.textView_message.setText(spannableString);
-
-            holder.textView_message.setClickable(true);
-            holder.textView_message.setMovementMethod(LinkMovementMethod.getInstance());
-            if (identify.equals("me")) {
-                holder.textView_message.setBackgroundResource(R.drawable.sender_message_layout);
-            } else {
-                holder.textView_message.setBackgroundResource(R.drawable.receiver_messages_layout);
-            }
-
+            });
+            holder.layout_file.setBackgroundResource(R.drawable.receiver_messages_layout);
         }
 
         private void imgDownLoad(final groupViewHolder holder, final String message, final int position) {
             holder.imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+
+                    Log.d("사진목록", img_list.toString());
+
                     Intent intent = new Intent(GroupMessageActivity.this, BigPictureActivity.class);
+                    long times = (long) newComments.get(position).timestamp;
+                    String find = String.valueOf(times);
+                    Img im = new Img();
+                    im.setTime(find);
+                    int position2 = img_list.indexOf(im);
+                    Log.d("사진목록", find+"");
+                    Log.d("사진목록", position2+"");
+                    intent.putExtra("position", position2);
                     intent.putExtra("uri", message);
+                    intent.putParcelableArrayListExtra("imglist", (ArrayList<? extends Parcelable>) img_list);
                     String code = newComments.get(position).uid;
                     User imgUser = users.get(code);
                     String name = imgUser.getUserName();
@@ -1747,7 +1900,11 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                 }
             }
             if (userNumber > 0) {
-                textView.setText(String.valueOf(userNumber));
+                if (userNumber > 99) {
+                    textView.setText("99");
+                } else {
+                    textView.setText(String.valueOf(userNumber));
+                }
                 textView.setVisibility(View.VISIBLE);
             } else {
                 textView.setVisibility(View.INVISIBLE);
@@ -1770,12 +1927,18 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             private ImageView imageView; // 이미지
             private LinearLayout linearLayout_change_date;
             private TextView messageItem_change_date_textview;
-            private LinearLayout item_message;
-            private TextView textView_thumb;
+            private LinearLayout item_message, layout_file, layout_vote;
+            private TextView textView_thumb, vote_title;
+            private TextView textView_thumb_address, layout_file_name, layout_file_extension;
 
             private groupViewHolder(@NonNull View view) {
                 super(view);
+                layout_vote = view.findViewById(R.id.layout_vote);
+                vote_title = view.findViewById(R.id.vote_title);
                 item_message = view.findViewById(R.id.item_message);
+                layout_file = view.findViewById(R.id.layout_file);
+                layout_file_name = view.findViewById(R.id.layout_file_name);
+                layout_file_extension = view.findViewById(R.id.layout_file_extension);
 
                 textView_message = view.findViewById(R.id.messageItem_textView_message);
                 textView_name = view.findViewById(R.id.messageItem_textview_name);
@@ -1798,6 +1961,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                 messageItem_change_date_textview = view.findViewById(R.id.messageItem_change_date_textview);
 
                 textView_thumb = view.findViewById(R.id.messageItem_textView_thumbnail);
+                textView_thumb_address = view.findViewById(R.id.messageItem_textView_thumbnail_address);
             }
         }
     }

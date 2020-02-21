@@ -38,6 +38,7 @@ public class ShoppingFragment extends Fragment {
     private Toolbar chatToolbar;
     private ShoppingFragmentRecyclerAdapter ShoppingFragmentRecyclerAdapter;
     private List<ADlist> advertisement = new ArrayList<>();
+
     public ShoppingFragment() {
 
     }
@@ -45,7 +46,7 @@ public class ShoppingFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_shopping,container,false);
+        View view = inflater.inflate(R.layout.fragment_shopping, container, false);
         chatToolbar = view.findViewById(R.id.chat_toolbar);
         activity = (MainActivity) getActivity();
         activity.setSupportActionBar(chatToolbar);
@@ -57,7 +58,7 @@ public class ShoppingFragment extends Fragment {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 advertisement.clear();
-                for(DataSnapshot item : dataSnapshot.getChildren()){
+                for (DataSnapshot item : dataSnapshot.getChildren()) {
                     ADlist aDlist = item.getValue(ADlist.class);
                     advertisement.add(aDlist);
                 }
@@ -76,6 +77,7 @@ public class ShoppingFragment extends Fragment {
 
     class ShoppingFragmentRecyclerAdapter extends RecyclerView.Adapter<ShoppingFragmentRecyclerAdapter.CustomViewHolder> {
         private List<ADlist> advertisement;
+
         public ShoppingFragmentRecyclerAdapter(List<ADlist> advertisement) {
             this.advertisement = advertisement;
         }
@@ -112,6 +114,7 @@ public class ShoppingFragment extends Fragment {
         private class CustomViewHolder extends RecyclerView.ViewHolder {
             ImageView imageView;
             TextView content;
+
             public CustomViewHolder(View itemView) {
                 super(itemView);
                 imageView = itemView.findViewById(R.id.item_tv_title);

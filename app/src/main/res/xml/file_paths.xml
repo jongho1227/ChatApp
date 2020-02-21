@@ -6,4 +6,6 @@
     <cache-path
         name="images"
         path="/" />
+    <root-path name="root"
+        path="." />
 </paths>

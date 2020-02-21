@@ -48,9 +48,11 @@ import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
 import com.onvit.chatapp.R;
+import com.onvit.chatapp.chat.GroupMessageActivity;
 import com.onvit.chatapp.model.Notice;
 import com.onvit.chatapp.model.NotificationModel;
 import com.onvit.chatapp.util.PreferenceManager;
+import com.onvit.chatapp.util.Utiles;
 import com.vlk.multimager.activities.GalleryActivity;
 import com.vlk.multimager.utils.Constants;
 import com.vlk.multimager.utils.Image;
@@ -133,6 +135,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                     imgPath.add(s);
                     try {
                         URL url = new URL(s);
+                        Log.d("주소", url + "");
                     } catch (MalformedURLException e) {
                         e.printStackTrace();
                     }
@@ -270,7 +273,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                     int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
                     Bitmap newBitmap = rotateBitmap(bitmap, orientation);
 
-                    newBitmap.compress(Bitmap.CompressFormat.JPEG, 99, baos);
+                    newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
                     byte[] bytes = baos.toByteArray();
                     uploadTask = storageReference.putBytes(bytes);
                 } else {
@@ -329,7 +332,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                                                         FirebaseStorage.getInstance().getReference().child("Notice Img").child(code).child(key).delete();
                                                     }
                                                 }
-                                                sendFcm(registration_ids);
+                                                Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice");
                                                 finish();
                                             }
                                         });
@@ -370,7 +373,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                                     FirebaseStorage.getInstance().getReference().child("Notice Img").child(code).child(key).delete();
                                 }
                             }
-                            sendFcm(registration_ids);
+                            Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice");
                             finish();
                         }
                     });
@@ -406,7 +409,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                 int orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
                 Bitmap newBitmap = rotateBitmap(bitmap, orientation);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                newBitmap.compress(Bitmap.CompressFormat.JPEG, 99, baos);
+                newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
                 byte[] bytes = baos.toByteArray();
 
                 final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("Notice Img").child(userMessageKeyRef.getKey()).child(id);
@@ -430,7 +433,9 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                             imgUriList.put(id, imageUri);
                             flag[0]++;
                             tx.setText("이미지를 업로드 중입니다(" + flag[0] + "/" + imagesList.size() + ")");
+                            Log.d("이미지 업로드", flag[0] + "");
                             if (flag[0] == imagesList.size()) {
+                                Log.d("이미지 업로드", "시작");
                                 Notice notice = new Notice();
                                 notice.setTitle(title);
                                 notice.setContent(content);
@@ -448,7 +453,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                                         dialog.dismiss();
                                         NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                                         Toast.makeText(NoticeActivity.this, "공지사항을 등록하였습니다.", Toast.LENGTH_SHORT).show();
-                                        sendFcm(registration_ids);
+                                        Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice");
                                         finish();
                                     }
                                 });
@@ -470,55 +475,18 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
             notice.setTimestamp(date.getTime());
             notice.setName(PreferenceManager.getString(NoticeActivity.this, "name") + "(" + PreferenceManager.getString(NoticeActivity.this, "hospital") + ")");
             notice.setImg(imgUriList);
+            Log.d("등록", notice.toString());
             firebaseDatabase.child("Notice").push().setValue(notice).addOnSuccessListener(new OnSuccessListener<Void>() {
                 @Override
                 public void onSuccess(Void aVoid) {
                     dialog.dismiss();
                     NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
                     Toast.makeText(NoticeActivity.this, "공지사항을 등록하였습니다.", Toast.LENGTH_SHORT).show();
-                    sendFcm(registration_ids);
+                    Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice");
                     finish();
                 }
             });
         }
-    }
-
-    private void sendFcm(List<String> registration_ids) {
-        Gson gson = new Gson();
-
-        String userName = PreferenceManager.getString(NoticeActivity.this, "name");
-        String hospital = PreferenceManager.getString(NoticeActivity.this, "hospital");
-        NotificationModel notificationModel = new NotificationModel();
-        notificationModel.registration_ids = registration_ids;
-//        notificationModel.notification.title = userName+"("+hospital+")";
-//        notificationModel.notification.text = userName+"("+hospital+")"+"님이 새로운 공지를 등록하였습니다.";
-//        notificationModel.notification.tag = "notice";
-//        notificationModel.notification.click_action = "GroupMessage";
-
-        notificationModel.data.title = userName;
-        notificationModel.data.text = userName + "님이 새로운 공지를 등록하였습니다.";
-        notificationModel.data.tag = "notice";
-        notificationModel.data.click_action = "GroupMessage";
-
-
-        RequestBody requestBody = RequestBody.create(gson.toJson(notificationModel), MediaType.parse("application/json; charset=utf8"));
-        Request request = new Request.Builder().header("Content-Type", "apllication/json")
-                .addHeader("Authorization", "key=AAAAjkt-NJ4:APA91bF8vZrFrqLIRfpPwE_WvUrGj4aQEP8xF9_UvvG4MZXA2iV-o7NPAJdGGYhlMl_JXP8KQiF_YWQeVhT0DE8BSppJUfYazA0QR7tjozAdpzMvX9xLSHJ1mkOevT4_OlohvlOYS_e-")
-                .url("https://fcm.googleapis.com/fcm/send")
-                .post(requestBody)
-                .build();
-        OkHttpClient okHttpClient = new OkHttpClient();
-        okHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NotNull Call call, @NotNull IOException e) {
-
-            }
-
-            @Override
-            public void onResponse(@NotNull Call call, @NotNull Response response) throws IOException {
-
-            }
-        });
     }
 
     @Override
@@ -550,7 +518,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
             int samplesize = 1;
 
             while (true) {//2번
-                if (width / 2 < resize || height / 2 < resize) {
+                if (width / 2 < resize && height / 2 < resize) {
                     break;
                 }
 
@@ -642,6 +610,8 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
 
         @Override
         public void onBindViewHolder(@NonNull final NoticeViewHolder holder, final int position) {
+            Log.d("이미지", position + "");
+
             switch (noticeName) {
                 case "공지사항 등록":
                 case "공지사항 수정":

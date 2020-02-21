@@ -1,7 +1,6 @@
-package com.onvit.chatapp;
+package com.onvit.chatapp.admin;
 
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -9,16 +8,13 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.KCHA;
 import com.onvit.chatapp.model.User;
-import com.onvit.chatapp.util.SHA256Util;
 
 import java.io.InputStream;
 import java.util.Date;

@@ -24,8 +24,9 @@ import java.net.URL;
 
 public class ADActivity extends AppCompatActivity {
     private Bitmap bitmap;
-    private  PhotoView imageView;
+    private PhotoView imageView;
     private ImgTask imgTask;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -36,7 +37,7 @@ public class ADActivity extends AppCompatActivity {
         Glide.with(this).load(Uri.parse(img)).placeholder(R.drawable.ic_shopping).apply(new RequestOptions().fitCenter()).into(imageView);
     }
 
-    class ImgTask extends AsyncTask<String, Void, String>{
+    class ImgTask extends AsyncTask<String, Void, String> {
 
         @Override
         protected String doInBackground(String... strings) {

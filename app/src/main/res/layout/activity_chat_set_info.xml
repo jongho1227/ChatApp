@@ -8,16 +8,111 @@
     android:orientation="vertical"
     android:padding="10dp"
     tools:context=".chat.ChatSetInfoActivity">
+
     <TextView
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="채팅방인원"
+        android:layout_marginBottom="10dp"
+        android:text="채팅방 정보"
         android:textColor="@color/black"
+        android:textSize="25dp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="10dp"
+        android:text="파일 / 사진"
+        android:textColor="@color/black"
+        android:textSize="20dp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"
+        android:gravity="start"
+        android:orientation="vertical"
+        android:paddingStart="15dp">
+
+        <TextView
+            android:id="@+id/file"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            android:background="@drawable/radius_file"
+            android:drawableLeft="@drawable/ic_insert_drive_file_black_24dp"
+            android:drawablePadding="3dp"
+            android:letterSpacing="0.2"
+            android:padding="8dp"
+            android:text="대화방 파일"
+            android:textColor="@color/black"
+            android:textSize="18dp" />
+
+        <TextView
+            android:id="@+id/img"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/radius_file"
+            android:drawableLeft="@drawable/ic_base_img_24dp"
+            android:drawablePadding="3dp"
+            android:letterSpacing="0.2"
+            android:padding="8dp"
+            android:text="대화방 이미지"
+            android:textColor="@color/black"
+            android:textSize="18dp" />
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="10dp"
+        android:text="투표"
+        android:textColor="@color/black"
+        android:textSize="20dp"
         android:textStyle="bold"
-        android:textSize="20dp"/>
+        android:visibility="gone"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:layout_marginBottom="20dp"
+        android:gravity="start"
+        android:orientation="horizontal"
+        android:paddingStart="15dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/vote"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/radius_file"
+            android:drawableLeft="@drawable/ic_event_black_24dp"
+            android:drawablePadding="5dp"
+            android:letterSpacing="0.2"
+            android:padding="5dp"
+            android:text="투표"
+            android:gravity="center_vertical"
+            android:textColor="@color/black"
+            android:textSize="18dp" />
+    </LinearLayout>
+
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="10dp"
+        android:text="대화멤버"
+        android:textColor="@color/black"
+        android:textSize="20dp"
+        android:textStyle="bold" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/peopleinfo_recyclerview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="5dp" />
+        android:layout_marginTop="5dp"
+        android:paddingStart="5dp" />
 </LinearLayout>

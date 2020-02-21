@@ -21,10 +21,10 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:layout_marginBottom="5dp">
+        android:layout_marginBottom="8dp">
 
         <ImageView
             android:id="@+id/notice"
@@ -42,10 +42,11 @@
             android:layout_weight="0.8"
             android:ellipsize="end"
             android:maxWidth="250dp"
-            android:maxLines="1"
+            android:maxLines="2"
             android:textColor="@color/black"
-            android:textSize="25dp"
-            tools:text="공지사항이 길어지면 점점점으로" />
+            android:lineSpacingExtra="7dp"
+            android:textSize="23dp"
+            tools:text="공지사항 제목은 최대 두줄까지 나오고 두줄이 넘어가면 점점점으로 표기됩니다." />
 
         <ImageView
             android:id="@+id/new_icon"

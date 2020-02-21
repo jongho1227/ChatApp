@@ -16,6 +16,63 @@ public class ChatModel {
         public String type;
         public Map<String, Object> readUsers = new HashMap<>();
         public Map<String, Object> existUser = new HashMap<>();
+        public String key;
+
+        public String getUid() {
+            return uid;
+        }
+
+        public void setUid(String uid) {
+            this.uid = uid;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public Object getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(Object timestamp) {
+            this.timestamp = timestamp;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public Map<String, Object> getReadUsers() {
+            return readUsers;
+        }
+
+        public void setReadUsers(Map<String, Object> readUsers) {
+            this.readUsers = readUsers;
+        }
+
+        public Map<String, Object> getExistUser() {
+            return existUser;
+        }
+
+        public void setExistUser(Map<String, Object> existUser) {
+            this.existUser = existUser;
+        }
+
+        public String getKey() {
+            return key;
+        }
+
+        public void setKey(String key) {
+            this.key = key;
+        }
 
         @Override
         public String toString() {

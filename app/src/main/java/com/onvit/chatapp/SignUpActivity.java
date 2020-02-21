@@ -11,7 +11,6 @@ import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -118,7 +117,7 @@ public class SignUpActivity extends AppCompatActivity {
         if (getIntent().getParcelableExtra("modify") == null) {
             final User joinUser = getIntent().getParcelableExtra("user");
             grade.setText(joinUser.getGrade());
-            name.setText(joinUser.getUserName());
+            name.setText(joinUser.getUserName().trim());
             tel.setText(joinUser.getTel());
             email.setText(joinUser.getUserEmail());
             hospital.setText(joinUser.getHospital());
@@ -208,7 +207,7 @@ public class SignUpActivity extends AppCompatActivity {
             Bitmap newBitmap = rotateBitmap(bitmap, orientation);
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            newBitmap.compress(Bitmap.CompressFormat.JPEG, 99, baos);
+            newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
             final byte[] bytes = baos.toByteArray();
             final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("userImages").child(user.getUid());
             UploadTask uploadTask = storageReference.putBytes(bytes); // firebaseStorage에 uid이름으로 프로필 사진 저장
@@ -307,7 +306,7 @@ public class SignUpActivity extends AppCompatActivity {
         }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(SignUpActivity.this);
-        builder.setView(R.layout.loding);
+        builder.setView(R.layout.loading);
         final AlertDialog dialog = builder.create();
         dialog.setCanceledOnTouchOutside(false);
         dialog.setCancelable(false);
@@ -350,7 +349,7 @@ public class SignUpActivity extends AppCompatActivity {
                             Bitmap newBitmap = rotateBitmap(bitmap, orientation);
 
                             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                            newBitmap.compress(Bitmap.CompressFormat.JPEG, 99, baos);
+                            newBitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
                             final byte[] bytes = baos.toByteArray();
                             final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("userImages").child(uid);
                             UploadTask uploadTask = storageReference.putBytes(bytes); // firebaseStorage에 uid이름으로 프로필 사진 저장

@@ -3,6 +3,8 @@ package com.onvit.chatapp.model;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.Objects;
+
 public class User implements Comparable<User>, Parcelable {
     private String userName;
     private String userEmail;
@@ -144,5 +146,19 @@ public class User implements Comparable<User>, Parcelable {
             return -1;
         }
         return 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(userName, user.userName) &&
+                Objects.equals(tel, user.tel);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userName, tel);
     }
 }

@@ -10,18 +10,13 @@ import android.graphics.Bitmap;
 import android.net.http.SslCertificate;
 import android.net.http.SslError;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
 import android.webkit.JsResult;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -30,14 +25,12 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.onvit.chatapp.AdminActivity;
 import com.onvit.chatapp.LoginActivity;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.SignUpActivity;
 import com.onvit.chatapp.SplashActivity;
 import com.onvit.chatapp.model.KCHA;
 import com.onvit.chatapp.model.User;
-import com.onvit.chatapp.notice.NoticeActivity;
 
 import org.json.JSONException;
 

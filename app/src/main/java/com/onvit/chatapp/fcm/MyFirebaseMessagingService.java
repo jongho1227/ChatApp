@@ -105,7 +105,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, channelId)
                 .setSmallIcon(R.mipmap.ic_kcha)
                 .setContentTitle(remoteMessage.getData().get("title"))
-                .setContentText(remoteMessage.getData().get("text"))
+                .setContentText(remoteMessage.getData().get("body"))
                 .setAutoCancel(true) // 누르면 알림 없어짐
                 .setSound(defaultSoundUri)
                 .setContentIntent(pendingIntent);

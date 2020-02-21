@@ -8,5 +8,11 @@
     <item
         android:id="@+id/admin"
         android:title="관리자페이지"
-        app:showAsAction="never"/>
+        app:showAsAction="never"
+        android:visible="false"/>
+    <item
+        android:id="@+id/invite"
+        android:title="앱 초대 보내기"
+        app:showAsAction="never"
+        android:visible="false"/>
 </menu>
