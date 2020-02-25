@@ -36,6 +36,7 @@ import com.google.firebase.iid.InstanceIdResult;
 import com.onvit.chatapp.ad.ShoppingFragment;
 import com.onvit.chatapp.admin.AdminActivity;
 import com.onvit.chatapp.admin.InviteActivity;
+import com.onvit.chatapp.admin.SetupFragment;
 import com.onvit.chatapp.chat.ChatFragment;
 import com.onvit.chatapp.chat.SelectGroupChatActivity;
 import com.onvit.chatapp.contact.PeopleFragment;
@@ -51,6 +52,9 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
     private final static int PERMISSION_REQUEST_CODE = 1000;
     BottomNavigationMenuView bottomNavigationMenuView;
+    Fragment notice = new NoticeFragment();
+    Fragment people = new PeopleFragment();
+    Fragment shop = new ShoppingFragment();
     private FirebaseAuth firebaseAuth;
     private String text = null;
     private Uri uri = null;
@@ -58,10 +62,8 @@ public class MainActivity extends AppCompatActivity {
     private String uid;
     private ValueEventListener valueEventListener;
     private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-    Fragment notice = new NoticeFragment();
-    Fragment people = new PeopleFragment();
-    Fragment shop = new ShoppingFragment();
-    Fragment chat = new ChatFragment();
+    BottomNavigationView bottomNavigationView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -81,9 +83,11 @@ public class MainActivity extends AppCompatActivity {
         PreferenceManager.setString(MainActivity.this, "phone", user.getTel());
         PreferenceManager.setString(MainActivity.this, "uid", user.getUid());
 
+
         getIntent().addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        BottomNavigationView bottomNavigationView = findViewById(R.id.mainActivity_bottomNavigationView);
-        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new NoticeFragment()).commitAllowingStateLoss();
+        bottomNavigationView = findViewById(R.id.mainActivity_bottomNavigationView);
+        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, notice).commitAllowingStateLoss();
+
 
         bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
@@ -96,11 +100,17 @@ public class MainActivity extends AppCompatActivity {
                         getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, people).commitAllowingStateLoss();
                         return true;
                     case R.id.action_chat:
-                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, chat).commitAllowingStateLoss();
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new ChatFragment()).commitAllowingStateLoss();
+                        bottomNavigationMenuView.getChildAt(2).setEnabled(false);
                         return true;
                     case R.id.action_account:
                         getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, shop).commitAllowingStateLoss();
                         return true;
+                    case R.id.action_setup:
+                        getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new SetupFragment(user)).commitAllowingStateLoss();
+                        bottomNavigationMenuView.getChildAt(4).setEnabled(false);
+                        return true;
+
                 }
                 return false;
             }
@@ -204,10 +214,12 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         if (getIntent().getStringExtra("tag") != null) {
             if (getIntent().getStringExtra("tag").equals("normalChat") || getIntent().getStringExtra("tag").equals("officerChat")) {
-                getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, chat).commitAllowingStateLoss();
+                getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new ChatFragment()).commitAllowingStateLoss();
+                bottomNavigationView.setSelectedItemId(R.id.action_chat);
                 getIntent().removeExtra("tag");
             }
         }
+
 
         View v = bottomNavigationMenuView.getChildAt(2);
         BottomNavigationItemView itemView = (BottomNavigationItemView) v;
@@ -252,7 +264,8 @@ public class MainActivity extends AppCompatActivity {
                 FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("userInfo").child(uid).setValue(user);
 
                 if (user.getGrade().equals("임원")) {
-                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").child(uid).setValue(user);;
+                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").child(uid).setValue(user);
+                    ;
                 }
             }
         });
@@ -266,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
         if (user.getHospital().equals("개발자")) {
             menu.findItem(R.id.admin).setVisible(true);
         }
-        if(user.getHospital().equals("개발자") || user.getHospital().equals("사무국장")){
+        if (user.getHospital().equals("개발자") || user.getHospital().equals("사무국장")) {
             menu.findItem(R.id.invite).setVisible(true);
         }
         return true;

@@ -35,7 +35,7 @@ import java.util.ArrayList;
 
 public class UnsignedFragment extends Fragment {
     ArrayList<User> user;
-    Button button;
+    Button button, tButton;
     ArrayList<String> phone = new ArrayList<>();
     private FirebaseRemoteConfig mFirebaseRemoteConfig;
     public UnsignedFragment() {
@@ -58,7 +58,36 @@ public class UnsignedFragment extends Fragment {
         }
 
         button = view.findViewById(R.id.push);
+        tButton = view.findViewById(R.id.test_push);
+        tButton.setVisibility(View.VISIBLE);
         button.setVisibility(View.VISIBLE);
+
+        tButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Dexter.withActivity(getActivity()).withPermission(Manifest.permission.SEND_SMS)
+                        .withListener(new PermissionListener() {
+                            @Override
+                            public void onPermissionGranted(PermissionGrantedResponse response) {
+                                SmsManager smsManager = SmsManager.getDefault();
+                                smsManager.sendTextMessage("01044155014",null,"테스트문자전송",null,null);
+                                Toast.makeText(getContext(), "전송완료", Toast.LENGTH_SHORT).show();
+                            }
+
+                            @Override
+                            public void onPermissionDenied(PermissionDeniedResponse response) {
+
+                            }
+
+                            @Override
+                            public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
+
+                            }
+                        }).check();
+            }
+        });
+
+
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

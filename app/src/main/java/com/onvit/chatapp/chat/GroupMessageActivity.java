@@ -120,8 +120,8 @@ import okhttp3.Response;
 
 public class GroupMessageActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private final int readMoreChatCount = 300;
-    private final int firstReadChatCount = 500;
+    private final int readMoreChatCount = 50;
+    private final int firstReadChatCount = 50;
     int i = 0; // 첫 화면 들어갈때 스크롤 위치 맨 아래로 내리기위함.
     int c = 0;
     Map<String, User> users = new HashMap<>();

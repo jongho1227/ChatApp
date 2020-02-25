@@ -16,4 +16,13 @@
         android:layout_alignParentBottom="true"
         android:text="보내기"
         android:visibility="gone" />
+    <Button
+        android:id="@+id/test_push"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toStartOf="@+id/push"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="20dp"
+        android:text="테스트 보내기"
+        android:visibility="gone"/>
 </RelativeLayout>
