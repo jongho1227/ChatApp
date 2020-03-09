@@ -362,7 +362,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
             firebaseDatabase.child("Notice").updateChildren(map).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
-                    firebaseDatabase.child("Notice").child(code).setValue(notice).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    firebaseDatabase.child("Notice").push().setValue(notice).addOnSuccessListener(new OnSuccessListener<Void>() {
                         @Override
                         public void onSuccess(Void aVoid) {
                             dialog.dismiss();

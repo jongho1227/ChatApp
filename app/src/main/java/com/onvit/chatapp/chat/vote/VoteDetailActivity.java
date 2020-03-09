@@ -1,11 +1,14 @@
 package com.onvit.chatapp.chat.vote;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.viewpager.widget.ViewPager;
 
 import android.os.Bundle;
 import android.util.Log;
+import android.view.MenuItem;
 
 import com.google.android.material.tabs.TabLayout;
 import com.google.firebase.database.DataSnapshot;
@@ -25,8 +28,10 @@ import java.util.Set;
 public class VoteDetailActivity extends AppCompatActivity {
     ViewPager viewPager;
     TabLayout tabLayout;
+    private Toolbar toolbar;
     Map<String, Boolean> join = new HashMap<>();
     Map<String, List<String>> detailUser = new HashMap<>();
+    Map<String, String> cUser = new HashMap<>();
     String toRoom;
     List<String> joinUser;
     List<User> joinUserList = new ArrayList<>();
@@ -38,8 +43,16 @@ public class VoteDetailActivity extends AppCompatActivity {
         setContentView(R.layout.activity_vote_detail);
         join = (Map<String, Boolean>) getIntent().getSerializableExtra("join");
         detailUser = (Map<String, List<String>>) getIntent().getSerializableExtra("detail");
+        cUser = (Map<String,String>) getIntent().getSerializableExtra("cUser");
         toRoom = getIntent().getStringExtra("room");
         joinUser = new ArrayList<>();
+
+        toolbar = findViewById(R.id.toolbar);
+        toolbar.setBackgroundResource(R.color.notice);
+        setSupportActionBar(toolbar);
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setTitle("투표상세보기");
+        actionBar.setDisplayHomeAsUpEnabled(true);
 
         Log.d("참여", join.toString());
 
@@ -55,6 +68,11 @@ public class VoteDetailActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for(DataSnapshot i : dataSnapshot.getChildren()){
                     User user = i.getValue(User.class);
+
+                    if(cUser.get(user.getUid())==null){
+                        continue;
+                    }
+
                     allUserList.add(user);
                     if(joinUser.size()==0){
                         notJoinUserList.add(user);
@@ -106,5 +124,25 @@ public class VoteDetailActivity extends AppCompatActivity {
 
             }
         });
+    }
+
+    //뒤로가기 눌렀을때
+    @Override
+    public void onBackPressed() {
+        finish();
+        overridePendingTransition(R.anim.fromright, R.anim.toleft);//화면 사라지는 방향
+    }
+
+    //툴바에 뒤로가기 버튼
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 }

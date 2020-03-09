@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,6 +44,7 @@ public class VoteActivity extends AppCompatActivity {
     private String toRoom, vote_key,uid;
     private SimpleDateFormat changeDateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 E요일", Locale.KOREA);
     private String flag;
+    private ImageView back;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,6 +54,7 @@ public class VoteActivity extends AppCompatActivity {
         vote_key = getIntent().getStringExtra("key");
         uid = PreferenceManager.getString(VoteActivity.this, "uid");
         flag = getIntent().getStringExtra("flag");
+        back = findViewById(R.id.back_arrow);
         databaseReference.child("Vote").child(toRoom).child(vote_key).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
@@ -72,13 +75,14 @@ public class VoteActivity extends AppCompatActivity {
 
                 final Map<String, Boolean> join = new HashMap<>();
                 final Map<String, List<String>> detailUser = new HashMap<>();
-
+                final Map<String, String> cUser = new HashMap<>();
 
                 final Map<String, Object> update = new HashMap<>();
 
                 while (it.hasNext()) {
                     int count = 0;
                     final String key = it.next();
+
                     update.put(key+"/"+uid, false);
                     Map<String, Object> map2 = (Map<String, Object>) read.get(key);
                     Set<String> keys2 = map2.keySet();
@@ -86,6 +90,7 @@ public class VoteActivity extends AppCompatActivity {
                     List<String> user = new ArrayList<>();
                     while (it2.hasNext()) {
                         String key2 = it2.next();
+                        cUser.put(key2,key2);
                         boolean b = (boolean) map2.get(key2);
                         if(b){
                             count++;
@@ -122,10 +127,12 @@ public class VoteActivity extends AppCompatActivity {
                 detail.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
+                        Log.d("유저정보", detailUser.toString());
                         Intent intent = new Intent(VoteActivity.this, VoteDetailActivity.class);
                         Log.d("참여", join.toString());
                         intent.putExtra("join", (Serializable) join);
                         intent.putExtra("detail", (Serializable) detailUser);
+                        intent.putExtra("cUser", (Serializable) cUser);
                         intent.putExtra("room", toRoom);
                         startActivity(intent);
                     }
@@ -163,5 +170,18 @@ public class VoteActivity extends AppCompatActivity {
 
             }
         });
+
+        back.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onBackPressed();
+            }
+        });
+    }
+
+    @Override
+    public void onBackPressed() {
+        finish();
+        overridePendingTransition(R.anim.fromright, R.anim.toleft);//화면 사라지는 방향
     }
 }

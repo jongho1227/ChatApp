@@ -34,6 +34,7 @@ public class InviteActivity extends AppCompatActivity {
         FirebaseDatabase.getInstance().getReference().child("KCHA").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Log.d("가입자", dataSnapshot.getChildrenCount()+"");
                 for(DataSnapshot item : dataSnapshot.getChildren()){
                     KCHA kcha = item.getValue(KCHA.class);
                     User user = new User();
@@ -41,6 +42,7 @@ public class InviteActivity extends AppCompatActivity {
                     user.setTel(kcha.getPhone().replaceAll("-",""));
                     user.setHospital(kcha.getHospital());
                     unSignUser.add(user);
+
                 }
                 Log.d("가입자", "총회원 : "+unSignUser.size()+"");
                 FirebaseDatabase.getInstance().getReference().child("Users").addListenerForSingleValueEvent(new ValueEventListener() {

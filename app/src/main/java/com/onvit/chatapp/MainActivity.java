@@ -232,7 +232,15 @@ public class MainActivity extends AppCompatActivity {
                 int count = 0;
                 for (final DataSnapshot item : dataSnapshot.getChildren()) {// normalChat, officerChat
                     final LastChat lastChat = item.getValue(LastChat.class);
-                    count += Integer.parseInt(lastChat.getUsers().get(uid) + "");
+
+                    if(lastChat.getUsers()==null){
+                        return;
+                    }
+                    if(lastChat.getUsers().get(uid)==null){
+                        count += 0;
+                    }else{
+                        count += Integer.parseInt(lastChat.getUsers().get(uid) + "");
+                    }
                 }
                 if (count > 0) {
                     String c = count + "";

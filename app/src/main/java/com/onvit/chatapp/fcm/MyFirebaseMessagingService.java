@@ -35,15 +35,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     private static final String TAG = "MyFirebaseMsgService";
     @Override
     public void onMessageReceived(final RemoteMessage remoteMessage) { // 알림 받는부분, 포그라운드꺼만 받음.
-        // Check if message contains a data payload.
         if (remoteMessage.getData().size() > 0) {
-//            if (/* Check if data needs to be processed by long running job */ true) {
-//                // For long-running tasks (10 seconds or more) use WorkManager.
-//                scheduleJob();
-//            } else {
-//                // Handle message within 10 seconds
-//                handleNow();
-//            }
 
         }
         if (remoteMessage.getNotification() != null) {
@@ -60,6 +52,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     count +=  chatList.getUsers().get(uid);
                 }
                 ShortcutBadger.applyCount(getApplicationContext(),count);
+
             }
 
             @Override
@@ -70,25 +63,50 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     }
     @Override
     public void onNewToken(String token) {
+        Log.d(TAG, "Refreshed token: " + token);
         sendRegistrationToServer(token);
     }
     private void sendRegistrationToServer(String token) {
+        // TODO: Implement this method to send token to your app server.
     }
     private void handleNow() {
+        Log.d(TAG, "Short lived task is done.");
     }
 
-    private void sendNotification(RemoteMessage remoteMessage) {
-        Intent intent = new Intent(this, SplashActivity.class);//알림 누르면 열리는 창
-        String tag = remoteMessage.getData().get("tag");
-        String channelId;
-        int id = 1;
+    private void sendNotification(final RemoteMessage remoteMessage) {
+        final int[] id = new int[1];
+        final String tag = remoteMessage.getData().get("tag");
         if(tag.equals("normalChat")){
-            id=0;
+            id[0] =0;
+            sendFcm(remoteMessage, id[0], tag);
         }else if(tag.equals("officerChat")){
-            id=1;
+            id[0] =1;
+            sendFcm(remoteMessage, id[0], tag);
         }else if(tag.equals("notice")){
-            id=2;
+            id[0] =2;
+            sendFcm(remoteMessage, id[0], tag);
+        }else{
+            FirebaseDatabase.getInstance().getReference().child("groupChat").child(tag).child("id").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    Long id1 = dataSnapshot.getValue(Long.class);
+                    long id2 = id1;
+                    id[0] = (int) id2;
+                    sendFcm(remoteMessage, id[0], tag);
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
         }
+
+    }
+
+    private void sendFcm(RemoteMessage remoteMessage, int id, String tag) {
+        Intent intent = new Intent(this, SplashActivity.class);//알림 누르면 열리는 창
+        String channelId;
         int v = getSharedPreferences(getPackageName(), MODE_PRIVATE).getInt("vibrate", 0);
         if(v==0){
             channelId = getString(R.string.vibrate);

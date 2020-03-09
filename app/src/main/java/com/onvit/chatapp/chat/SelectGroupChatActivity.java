@@ -35,6 +35,7 @@ import com.onvit.chatapp.model.LastChat;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -118,9 +119,6 @@ public class SelectGroupChatActivity extends AppCompatActivity {
                     for (final DataSnapshot item : dataSnapshot.getChildren()) {// normalChat, officerChat
                         final LastChat lastChat = item.getValue(LastChat.class);
                         chatModels.add(lastChat);// 채팅방 밖에 표시할 내용들.
-                        keys.add(item.getKey());// normalChat, officerChat 채팅방 이름.
-                        count.add(lastChat.getUsers().get(uid) + ""); // 안읽은 숫자
-                        userCount.add(lastChat.getExistUsers().size() + "");
 
                         countEventListener = new ValueEventListener() {
                             @Override
@@ -135,6 +133,18 @@ public class SelectGroupChatActivity extends AppCompatActivity {
                         };
                         databaseReference.child("groupChat").child(item.getKey()).child("comments").orderByChild("existUser/" + uid).equalTo(true).addValueEventListener(countEventListener);
 
+                    }
+                    Collections.sort(chatModels);
+                    for(int i=0; i<chatModels.size(); i++){
+                        String chatName = chatModels.get(i).getChatName();
+                        if(chatName.equals("회원채팅방")){
+                            chatName = "normalChat";
+                        }else if(chatName.equals("임원채팅방")){
+                            chatName = "officerChat";
+                        }
+                        keys.add(chatName);
+                        count.add(chatModels.get(i).getUsers().get(uid)+"");
+                        userCount.add(chatModels.get(i).getExistUsers().size()+"");
                     }
                     notifyDataSetChanged();
                 }
@@ -172,19 +182,20 @@ public class SelectGroupChatActivity extends AppCompatActivity {
             String lastChat = chatModels.get(position).getLastChat();
             holder.textView_last_message.setText(lastChat);
             //보낸 시간
-            if (chatModels.get(position).getTimestamp() == null) {
+            if (chatModels.get(position).getTimestamp() == 0) {
                 holder.textView_timestamp.setVisibility(View.INVISIBLE);
                 holder.textView_timestamp2.setVisibility(View.INVISIBLE);
             } else {
                 simpleDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+                simpleDateFormat2.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
                 long unixTime = (long) chatModels.get(position).getTimestamp();
                 Date date = new Date(unixTime);
                 Date date2 = new Date();
-
                 SimpleDateFormat sd = new SimpleDateFormat("yyyyMMddHHmm");
-
+                sd.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
                 String dS = sd.format(date);
                 String dS2 = sd.format(date2);
+
                 holder.textView_timestamp.setVisibility(View.VISIBLE);
                 holder.textView_timestamp2.setVisibility(View.VISIBLE);
                 if (dS2.substring(0, 8).equals(dS.substring(0, 8))) {

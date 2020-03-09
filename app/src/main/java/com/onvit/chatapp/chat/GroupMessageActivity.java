@@ -1,5 +1,6 @@
 package com.onvit.chatapp.chat;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -67,7 +68,6 @@ import com.google.firebase.storage.FileDownloadTask;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
-import com.google.gson.Gson;
 import com.onvit.chatapp.BuildConfig;
 import com.onvit.chatapp.LoginActivity;
 import com.onvit.chatapp.R;
@@ -75,16 +75,13 @@ import com.onvit.chatapp.chat.vote.VoteActivity;
 import com.onvit.chatapp.contact.PersonInfoActivity;
 import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.Img;
-import com.onvit.chatapp.model.NotificationModel;
 import com.onvit.chatapp.model.User;
-import com.onvit.chatapp.util.PreferenceManager;
 import com.onvit.chatapp.util.Utiles;
 import com.vlk.multimager.activities.GalleryActivity;
 import com.vlk.multimager.utils.Constants;
 import com.vlk.multimager.utils.Image;
 import com.vlk.multimager.utils.Params;
 
-import org.jetbrains.annotations.NotNull;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -110,16 +107,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-
 public class GroupMessageActivity extends AppCompatActivity implements View.OnClickListener {
 
+    public static Activity message;
     private final int readMoreChatCount = 50;
     private final int firstReadChatCount = 50;
     int i = 0; // 첫 화면 들어갈때 스크롤 위치 맨 아래로 내리기위함.
@@ -131,7 +121,6 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
     List<ChatModel.Comment> newComments = new ArrayList<>();
     List<User> userinfolist = new ArrayList<>();
     InputStream inputStream;
-
     String toRoom;
     String uid;
     EditText editText;
@@ -159,11 +148,13 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
     private String shareText;
     private Uri shareUri;
     private List<Img> img_list = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_message);
         Log.d("순서", "oncreate");
+        message = GroupMessageActivity.this;
         firebaseAuth = FirebaseAuth.getInstance();
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         databaseReference = FirebaseDatabase.getInstance().getReference();
@@ -184,6 +175,45 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         initSetting();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //채팅방들어왓을때 알림 지우는부분.
+        if (toRoom.equals("normalChat")) {
+            chatName = "회원채팅방";
+            NotificationManagerCompat.from(this).cancel(0);
+        } else if (toRoom.equals("officerChat")) {
+            chatName = "임원채팅방";
+            NotificationManagerCompat.from(this).cancel(1);
+        } else {
+            chatName = toRoom;
+            databaseReference.child("groupChat").child(toRoom).child("id").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    Long id = dataSnapshot.getValue(Long.class);
+                    long id2 = id;
+                    int id3 = (int) id2;
+                    Log.d("채널", id3 + "");
+                    NotificationManagerCompat.from(GroupMessageActivity.this).cancel(id3);
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+        }
+
+        setSupportActionBar(chatToolbar);
+        ActionBar actionBar = getSupportActionBar();
+        actionBar.setTitle(chatName);
+        actionBar.setDisplayHomeAsUpEnabled(true);
+
+        getIntent().removeExtra("on");
+        Map<String, Object> map = new HashMap<>();
+        map.put(uid, true);
+        databaseReference.child("groupChat").child(toRoom).child("users").updateChildren(map);
+    }
 
     private void initSetting() {
         Log.d("순서", "initSetting");
@@ -200,6 +230,8 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         userInfoGetEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                userinfolist.clear();
+                users.clear();
                 Log.d("순서", "userInfoGetEventListener");
                 User myInfo = new User();
                 for (DataSnapshot item : dataSnapshot.getChildren()) {
@@ -230,7 +262,14 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                         startActivity(intent);
                     }
                 });
-
+                recyclerView = findViewById(R.id.groupMessageActivity_recyclerView);
+                mFirebaseAdapter = new GroupMessageRecyclerViewAdapter(users);
+                recyclerView.setLayoutManager(new LinearLayoutManager(GroupMessageActivity.this));
+                recyclerView.setAdapter(mFirebaseAdapter);
+                init();//메세지 입력했을때 처리 하는부분.
+                getMessageList();
+                keyboardController();
+                recyclerView.scrollToPosition(mFirebaseAdapter.getItemCount() - 1);
             }
 
             @Override
@@ -271,19 +310,6 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         };
         databaseReference.child("groupChat").child(toRoom).child("users").addValueEventListener(accessChatMemberEventListener);
 
-
-        recyclerView = findViewById(R.id.groupMessageActivity_recyclerView);
-        recyclerView.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mFirebaseAdapter = new GroupMessageRecyclerViewAdapter(users);
-                recyclerView.setLayoutManager(new LinearLayoutManager(GroupMessageActivity.this));
-                recyclerView.setAdapter(mFirebaseAdapter);
-                init();//메세지 입력했을때 처리 하는부분.
-                getMessageList();
-                keyboardController();
-            }
-        }, 200);
         sendFile.setOnClickListener(this);
     }
 
@@ -344,6 +370,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 Log.d("불러오는채팅갯수", dataSnapshot.getChildrenCount() + "");
                 Log.d("불러오는채팅갯수", newComments.get(0).timestamp + "");
+                List<Img> list = new ArrayList<>();
                 //채팅없을때 리턴
                 if (dataSnapshot.getValue() == null) {
                     return;
@@ -366,6 +393,29 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                         }
 
                         ChatModel.Comment comment = item.getValue(ChatModel.Comment.class);
+
+                        if (comment.getType().equals("img")) {
+                            Img i = new Img();
+
+                            if (users.get(comment.getUid()) == null) {
+                                i.setName("(알수없음)");
+                            } else {
+                                i.setName(users.get(comment.getUid()).getUserName());
+                            }
+
+                            String uri;
+                            if (comment.message.startsWith("http")) {
+                                uri = comment.message;
+                            } else {
+                                int firstIndex = comment.message.indexOf("/");
+                                int secondIndex = comment.message.indexOf("/", firstIndex + 1);
+                                uri = comment.message.substring(secondIndex + 1);
+                            }
+                            i.setUri(uri);
+                            String time = String.valueOf((long) comment.getTimestamp());
+                            i.setTime(time);
+                            list.add(i);
+                        }
                         comment.setKey(item.getKey());
                         //내가없는 채팅은 안가지고옴
                         if (comment.existUser.get(uid) == null) {
@@ -376,6 +426,11 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                         comments.add(l, comment);
                         k++;
                         l++;
+                    }
+                    int index = 0;
+                    for(Img i : list){
+                        img_list.add(index, i);
+                        index++;
                     }
                     mFirebaseAdapter.notifyDataSetChanged();
                     if (l < readMoreChatCount) {
@@ -503,7 +558,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
         final DatabaseReference userMessageKeyRef = databaseReference.child("groupChat").child(toRoom).child("comments").push();
 
-        final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("Image Files").child(userMessageKeyRef.getKey());
+        final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("Image Files").child(toRoom).child(userMessageKeyRef.getKey());
         UploadTask uploadTask = storageReference.putBytes(bytes);
 
         uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
@@ -607,45 +662,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         textComment.readUsers = messageReadUsers;
         textComment.type = sp[1] + "\n" + sp[2];
         textComment.existUser = existUserGroupChat;
-        newComments.add(textComment);
-        mFirebaseAdapter.notifyDataSetChanged();
-        recyclerView.scrollToPosition(mFirebaseAdapter.getItemCount() - 1);
-        final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("Image Files").child(userMessageKeyRef.getKey());
-        UploadTask uploadTask = storageReference.putStream(inputStream);
-
-        uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
-            @Override
-            public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
-                if (!task.isSuccessful()) {
-                    throw task.getException();
-                }
-                return storageReference.getDownloadUrl();
-            }
-        }).addOnCompleteListener(new OnCompleteListener<Uri>() {
-            //storageReference 에 저장한 이미지 uri를 불러옴
-            @Override
-            public void onComplete(@NonNull final Task<Uri> task) {
-                if (task.isSuccessful()) {
-                    //이미지 저장 성공
-
-                    final Date date = new Date();
-                    Uri taskResult = task.getResult();
-                    String imageUri = taskResult.toString();
-                    final ChatModel.Comment comment = new ChatModel.Comment();
-                    comment.uid = uid;
-                    comment.message = imageUri;
-                    comment.timestamp = date.getTime();
-                    comment.readUsers = messageReadUsers;
-                    comment.type = sp[1] + "\n" + sp[2];
-                    comment.existUser = existUserGroupChat;
-
-                    newComments.remove(textComment);
-
-                    databaseReference.child("groupChat").child(toRoom).child("comments").child(userMessageKeyRef.getKey()).setValue(comment);
-
-                }
-            }
-        });
+        databaseReference.child("groupChat").child(toRoom).child("comments").child(userMessageKeyRef.getKey()).setValue(textComment);
     }
 
     private Bitmap rotateBitmap(Bitmap bitmap, int orientation) {
@@ -702,7 +719,6 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             int height = options.outHeight;
 
 
-
             Log.d("사진크기", "width=" + width + "/height=" + height);
             int samplesize = 1;
 
@@ -734,6 +750,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
         return map;
     }
+
     @Override
     public void onClick(View view) {
         switch (view.getId()) {
@@ -840,7 +857,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
                     String extension = fileName.substring(fileName.lastIndexOf(".") + 1);
                     final DatabaseReference userMessageKeyRef = databaseReference.child("groupChat").child(toRoom).child("comments").push();
-                    final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("Document Files").child(userMessageKeyRef.getKey() + "." + extension);
+                    final StorageReference storageReference = FirebaseStorage.getInstance().getReference().child("Document Files").child(toRoom).child(userMessageKeyRef.getKey() + "." + extension);
                     UploadTask uploadTask = storageReference.putFile(fileUri);
                     uploadTask.continueWithTask(new Continuation<UploadTask.TaskSnapshot, Task<Uri>>() {
                         @Override
@@ -1001,19 +1018,25 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                 comment_modify.setKey(dataSnapshot.getKey());
                 //화면에 뿌리는 코멘트.
 
-                if(comment_modify.getType().equals("img")){
+                if (comment_modify.getType().equals("img")) {
                     Img i = new Img();
-                    i.setName(users.get(comment_modify.getUid()).getUserName());
+
+                    if (users.get(comment_modify.getUid()) == null) {
+                        i.setName("(알수없음)");
+                    } else {
+                        i.setName(users.get(comment_modify.getUid()).getUserName());
+                    }
+
                     String uri;
-                    if(comment_modify.message.startsWith("http")){
+                    if (comment_modify.message.startsWith("http")) {
                         uri = comment_modify.message;
-                    }else{
+                    } else {
                         int firstIndex = comment_modify.message.indexOf("/");
                         int secondIndex = comment_modify.message.indexOf("/", firstIndex + 1);
                         uri = comment_modify.message.substring(secondIndex + 1);
                     }
                     i.setUri(uri);
-                    String time = String.valueOf((long)comment_modify.getTimestamp());
+                    String time = String.valueOf((long) comment_modify.getTimestamp());
                     i.setTime(time);
                     img_list.add(i);
                 }
@@ -1118,6 +1141,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
             @Override
             public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
                 final ChatModel.Comment comment = dataSnapshot.getValue(ChatModel.Comment.class);
+                comment.setKey(dataSnapshot.getKey());
                 final int a = newComments.indexOf(comment);
                 newComments.remove(a);
 
@@ -1144,35 +1168,12 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         databaseReference.child("groupChat").child(toRoom).child("comments").orderByChild("existUser/" + uid).equalTo(true).limitToLast(firstReadChatCount).addChildEventListener(valueEventListener);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        //채팅방들어왓을때 알림 지우는부분.
-        if (toRoom.equals("normalChat")) {
-            chatName = "회원채팅방";
-            NotificationManagerCompat.from(this).cancel(toRoom, 0);
-            NotificationManagerCompat.from(this).cancel(0);
-        } else {
-            chatName = "임원채팅방";
-            NotificationManagerCompat.from(this).cancel(toRoom, 0);
-            NotificationManagerCompat.from(this).cancel(1);
-        }
-
-        setSupportActionBar(chatToolbar);
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setTitle(chatName);
-        actionBar.setDisplayHomeAsUpEnabled(true);
-
-        getIntent().removeExtra("on");
-        Map<String, Object> map = new HashMap<>();
-        map.put(uid, true);
-        databaseReference.child("groupChat").child(toRoom).child("users").updateChildren(map);
-    }
 
     @Override
     protected void onUserLeaveHint() {
         super.onUserLeaveHint();
         if (getIntent().getStringExtra("on") == null) {
+            Log.d("큰액티비티", "dd");
             Map<String, Object> map = new HashMap<>();
             map.put(uid, false);
             databaseReference.child("groupChat").child(toRoom).child("users").updateChildren(map);
@@ -1197,9 +1198,12 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         if (accessChatMemberEventListener != null) {
             databaseReference.child("groupChat").child(toRoom).child("users").removeEventListener(accessChatMemberEventListener);
         }
-        Map<String, Object> map = new HashMap<>();
-        map.put(uid, false);
-        databaseReference.child("groupChat").child(toRoom).child("users").updateChildren(map);
+
+        if (getIntent().getStringExtra("out") == null) {
+            Map<String, Object> map = new HashMap<>();
+            map.put(uid, false);
+            databaseReference.child("groupChat").child(toRoom).child("users").updateChildren(map);
+        }
     }
 
     //뒤로가기 눌렀을때
@@ -1448,7 +1452,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                 } else if (newComments.get(position).type.equals("file")) {
                     String me = "me";
                     getFile(holder, position, me, metrics);
-                } else if(newComments.get(position).type.equals("vote")){
+                } else if (newComments.get(position).type.equals("vote")) {
                     getVote(holder, position);
                 } else {
                     drawThumnail(holder, position, metrics);
@@ -1506,7 +1510,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     String other = "other";
                     getFile(holder, position, other, metrics);
 //                    longClick(holder);
-                }else if(newComments.get(position).type.equals("vote")){
+                } else if (newComments.get(position).type.equals("vote")) {
                     getVote(holder, position);
                 } else {
                     drawThumnail(holder, position, metrics);
@@ -1527,16 +1531,20 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                 public void onClick(View view) {
                     final String vote_key = newComments.get(position).getKey();
                     Intent intent = new Intent(GroupMessageActivity.this, VoteActivity.class);
-                    getIntent().putExtra("on","on");
+                    getIntent().putExtra("on", "on");
                     intent.putExtra("key", vote_key);
                     intent.putExtra("room", toRoom);
+
+                    Log.d("요요", vote_key+"야야야");
+                    Log.d("요요", toRoom+"야야야");
+
                     long time = Long.parseLong(newComments.get(position).message.split("!@#!@#")[1]);
 
                     long today = new Date().getTime();
 
-                    if(time-today<0){
+                    if (time - today < 0) {
                         intent.putExtra("flag", "over");
-                    }else{
+                    } else {
                         intent.putExtra("flag", "ing");
                     }
                     startActivity(intent);
@@ -1651,6 +1659,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
         private void getFile(@NonNull groupViewHolder holder, final int position, String identify, DisplayMetrics metrics) {
 
+
             holder.layout_file.setVisibility(View.VISIBLE);
             final String message = newComments.get(position).message;
             final int lastIndex = message.lastIndexOf("https://");
@@ -1682,7 +1691,8 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                             dir.mkdirs();
                             String filename = message.substring(0, lastIndex);
                             final File file = new File(dir, filename);
-                            FirebaseStorage.getInstance().getReference().child("Document Files/" + newComments.get(position).key + "." + ext)
+
+                            FirebaseStorage.getInstance().getReference().child("Document Files").child(toRoom).child(newComments.get(position).key + "." + ext)
                                     .getFile(file).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
                                 @Override
                                 public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
@@ -1737,8 +1747,8 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     Img im = new Img();
                     im.setTime(find);
                     int position2 = img_list.indexOf(im);
-                    Log.d("사진목록", find+"");
-                    Log.d("사진목록", position2+"");
+                    Log.d("사진목록", find + "");
+                    Log.d("사진목록", position2 + "");
                     intent.putExtra("position", position2);
                     intent.putExtra("uri", message);
                     intent.putParcelableArrayListExtra("imglist", (ArrayList<? extends Parcelable>) img_list);
@@ -1754,28 +1764,42 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
         private void yourProfileImage(@NonNull groupViewHolder holder, final int position) {
             //상대방 사진 표시
-            if ((users.get(newComments.get(position).uid).getUserProfileImageUrl()).equals("noImg")) {
+            if (users.get(newComments.get(position).uid) == null) {
                 Glide.with(holder.itemView.getContext()).load(R.drawable.standard_profile).apply(new RequestOptions().centerCrop()).into(holder.imageView_profile);
+                GradientDrawable profile = (GradientDrawable) GroupMessageActivity.this.getDrawable(R.drawable.radius);
+                holder.imageView_profile.setBackground(profile);
+                holder.imageView_profile.setClipToOutline(true);
+                holder.textView_name.setText("(알수없음)");
+                holder.linearLayout_to.setVisibility(View.VISIBLE);
+                User u = new User();
+                u.setUserProfileImageUrl("noImg");
+                u.setUserName("(알수없음)");
+                u.setUid(newComments.get(position).uid);
+                users.put(newComments.get(position).uid, u);
             } else {
-                Glide.with(holder.itemView.getContext()).load(users.get(newComments.get(position).uid).getUserProfileImageUrl()).placeholder(R.drawable.standard_profile).apply(new RequestOptions().centerCrop()).into(holder.imageView_profile);
-            }
-            GradientDrawable profile = (GradientDrawable) GroupMessageActivity.this.getDrawable(R.drawable.radius);
-            holder.imageView_profile.setBackground(profile);
-            holder.imageView_profile.setClipToOutline(true);
-            //상대방 이름 표시
-            holder.textView_name.setText(users.get(newComments.get(position).uid).getUserName() + "(" + users.get(newComments.get(position).uid).getHospital() + ")");
-            holder.linearLayout_to.setVisibility(View.VISIBLE);
-            holder.imageView_profile.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Intent intent = new Intent(GroupMessageActivity.this, PersonInfoActivity.class);
-                    getIntent().putExtra("on", "on");
-                    intent.putExtra("info", users.get(newComments.get(position).uid).getUid());
-
-                    intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                    startActivity(intent);
+                if ((users.get(newComments.get(position).uid).getUserProfileImageUrl()).equals("noImg")) {
+                    Glide.with(holder.itemView.getContext()).load(R.drawable.standard_profile).apply(new RequestOptions().centerCrop()).into(holder.imageView_profile);
+                } else {
+                    Glide.with(holder.itemView.getContext()).load(users.get(newComments.get(position).uid).getUserProfileImageUrl()).placeholder(R.drawable.standard_profile).apply(new RequestOptions().centerCrop()).into(holder.imageView_profile);
                 }
-            });
+                GradientDrawable profile = (GradientDrawable) GroupMessageActivity.this.getDrawable(R.drawable.radius);
+                holder.imageView_profile.setBackground(profile);
+                holder.imageView_profile.setClipToOutline(true);
+                //상대방 이름 표시
+                holder.textView_name.setText(users.get(newComments.get(position).uid).getUserName() + "(" + users.get(newComments.get(position).uid).getHospital() + ")");
+                holder.linearLayout_to.setVisibility(View.VISIBLE);
+                holder.imageView_profile.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Intent intent = new Intent(GroupMessageActivity.this, PersonInfoActivity.class);
+                        getIntent().putExtra("on", "on");
+                        intent.putExtra("info", users.get(newComments.get(position).uid).getUid());
+
+                        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                        startActivity(intent);
+                    }
+                });
+            }
         }
 
         private void imgLongClick(final groupViewHolder holder, final String path) {

@@ -1,12 +1,13 @@
 package com.onvit.chatapp.chat;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
@@ -24,26 +25,37 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.chat.vote.VoteListActivity;
 import com.onvit.chatapp.contact.PersonInfoActivity;
-import com.onvit.chatapp.model.Img;
+import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.User;
+import com.onvit.chatapp.model.Vote;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class ChatSetInfoActivity extends Activity implements View.OnClickListener {
     LinearLayout chat_info_linear_layout;
     RecyclerView recyclerView;
-    TextView vote, file, img;
+    TextView vote, file, img, plus, out;
+    ArrayList<User> userlist;
     private String uid;
     private String toRoom;
-    private List<Img> img_list;
+    private List<String> deleteKey = new ArrayList<>();
+    private List<String> deleteKey2 = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,11 +66,12 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
         toRoom = getIntent().getStringExtra("room");
         chat_info_linear_layout = findViewById(R.id.chat_info_linear_layout);
         recyclerView = findViewById(R.id.peopleinfo_recyclerview);
+        plus = findViewById(R.id.plus_ps);
         vote = findViewById(R.id.vote);
         file = findViewById(R.id.file);
         img = findViewById(R.id.img);
-        ArrayList<User> userlist = getIntent().getParcelableArrayListExtra("userInfo");
-        img_list = getIntent().getParcelableArrayListExtra("imglist");
+        out = findViewById(R.id.out);
+        userlist = getIntent().getParcelableArrayListExtra("userInfo");
         Log.d("유저정보", userlist.toString());
 
         WindowManager.LayoutParams wmlp = getWindow().getAttributes();
@@ -90,6 +103,8 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
         vote.setOnClickListener(this);
         file.setOnClickListener(this);
         img.setOnClickListener(this);
+        plus.setOnClickListener(this);
+        out.setOnClickListener(this);
     }
 
     @Override
@@ -112,6 +127,7 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
     protected void onUserLeaveHint() {
         super.onUserLeaveHint();
         if (getIntent().getStringExtra("on") == null) {
+            Log.d("작은액티비티", "dd");
             Map<String, Object> map = new HashMap<>();
             map.put(uid, false);
             FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("users").updateChildren(map);
@@ -139,10 +155,137 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
             case R.id.img:
                 intent = new Intent(ChatSetInfoActivity.this, ImgActivity.class);
                 intent.putExtra("room", getIntent().getStringExtra("room"));
-                intent.putParcelableArrayListExtra("imglist", (ArrayList<? extends Parcelable>) img_list);
+                intent.putParcelableArrayListExtra("userlist", userlist);
                 getIntent().putExtra("on", "on");
                 startActivity(intent);
                 overridePendingTransition(R.anim.fromleft, R.anim.toright);
+                break;
+            case R.id.plus_ps:
+                intent = new Intent(ChatSetInfoActivity.this, SelectPeopleActivity.class);
+                intent.putExtra("room", getIntent().getStringExtra("room"));
+                intent.putParcelableArrayListExtra("userlist", userlist);
+                intent.putExtra("plus", "plus");
+                getIntent().putExtra("on", "on");
+                startActivity(intent);
+                finish();
+                overridePendingTransition(R.anim.fromleft, R.anim.toright);
+                break;
+            case R.id.out:
+                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                builder.setMessage("채팅방의 모든 내용이 삭제됩니다. \n 정말 나가시겠습니까?");
+                builder.setPositiveButton("예", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        final Map<String, Object> map = new HashMap<>();
+                        final Map<String, Object> map2 = new HashMap<>();
+                        final Map<String, Object> voteMap = new HashMap<>();
+                        FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("comments").orderByChild("existUser/" + uid).equalTo(true)
+                                .addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                        for (DataSnapshot i : dataSnapshot.getChildren()) {
+                                            ChatModel.Comment comment = i.getValue(ChatModel.Comment.class);
+
+                                            if (comment.getType().equals("img") || comment.getType().length() > 10) {
+                                                deleteKey.add(i.getKey());
+                                            }
+                                            if (comment.getType().equals("file")) {
+                                                int a = comment.getMessage().lastIndexOf("https");
+                                                int b = comment.getMessage().substring(0, a).lastIndexOf(".");
+                                                String ext = comment.getMessage().substring(0, a).substring(b + 1);
+                                                deleteKey2.add(i.getKey() + "." + ext);
+                                            }
+
+                                            map.put("comments/" + i.getKey() + "/existUser/" + uid, null);
+                                            map.put("comments/" + i.getKey() + "/readUsers/" + uid, null);
+                                        }
+
+                                        map.put("userInfo/" + uid, null);
+
+                                        map.put("users/" + uid, null);
+
+                                        map2.put("existUsers/" + uid, null);
+                                        map2.put("users/" + uid, null);
+                                        voteMap.put(uid, null);
+
+                                        FirebaseDatabase.getInstance().getReference().child("Vote").child(toRoom).addListenerForSingleValueEvent(new ValueEventListener() {
+                                            @Override
+                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                for (DataSnapshot i : dataSnapshot.getChildren()) {
+                                                    Vote vote = i.getValue(Vote.class);
+                                                    Set<String> keys = vote.getContent().keySet();
+                                                    Iterator<String> it = keys.iterator();
+                                                    while (it.hasNext()) {
+                                                        String key = it.next();
+                                                        FirebaseDatabase.getInstance().getReference().child("Vote").child(toRoom).child(i.getKey())
+                                                                .child("content").child(key).updateChildren(voteMap);
+                                                    }
+                                                }
+                                            }
+
+                                            @Override
+                                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                            }
+                                        });
+
+                                        FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).updateChildren(map).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<Void> task) {
+                                                FirebaseDatabase.getInstance().getReference().child("lastChat").child(toRoom).updateChildren(map2).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                    @Override
+                                                    public void onComplete(@NonNull Task<Void> task) {
+                                                        FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).addListenerForSingleValueEvent(new ValueEventListener() {
+                                                            @Override
+                                                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                                                ChatModel chatModel = dataSnapshot.getValue(ChatModel.class);
+                                                                Log.d("없앰", chatModel.toString());
+                                                                if (chatModel.userInfo == null || chatModel.userInfo.size() == 0) {
+                                                                    Log.d("없앰", "들어옴");
+                                                                    FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).setValue(null);
+                                                                    FirebaseDatabase.getInstance().getReference().child("lastChat").child(toRoom).setValue(null);
+                                                                    for (String d : deleteKey) {
+                                                                        FirebaseStorage.getInstance().getReference().child("Image Files").child(toRoom).child(d).delete();
+                                                                    }
+                                                                    for (String d : deleteKey2) {
+                                                                        FirebaseStorage.getInstance().getReference().child("Document Files").child(toRoom).child(d).delete();
+                                                                    }
+                                                                    FirebaseDatabase.getInstance().getReference().child("Vote").child(toRoom).setValue(null);
+                                                                }
+                                                                GroupMessageActivity g = (GroupMessageActivity) GroupMessageActivity.message;
+                                                                g.getIntent().putExtra("on", "on");
+                                                                g.getIntent().putExtra("out", "out");
+                                                                getIntent().putExtra("on", "on");
+                                                                g.finish();
+                                                                finish();
+                                                            }
+
+                                                            @Override
+                                                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        });
+                                    }
+
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                    }
+                                });
+                    }
+                }).setNegativeButton("아니요", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                    }
+                });
+                AlertDialog dialog = builder.create();
+                dialog.show();
+
                 break;
         }
     }

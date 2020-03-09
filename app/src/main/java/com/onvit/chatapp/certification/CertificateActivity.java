@@ -101,10 +101,39 @@ public class CertificateActivity extends AppCompatActivity {
                             builder.setCancelable(false);
                             builder.create().show();
                         }else{
-                            Intent intent = new Intent(CertificateActivity.this, SignUpActivity.class);
-                            intent.putExtra("user", user);
-                            startActivity(intent);
-                            finish();
+                            FirebaseDatabase.getInstance().getReference().child("Users").addListenerForSingleValueEvent(new ValueEventListener() {
+                                @Override
+                                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                    for(DataSnapshot item : dataSnapshot.getChildren()){
+                                        User user = item.getValue(User.class);
+                                        if(user.getUserName().trim().equals(name) && user.getTel().equals(phone)){
+                                            AlertDialog.Builder builder = new AlertDialog.Builder(CertificateActivity.this);
+                                            builder.setMessage("이미 가입하신 회원입니다.");
+                                            builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialogInterface, int i) {
+                                                    Intent intent = new Intent(CertificateActivity.this, LoginActivity.class);
+                                                    startActivity(intent);
+                                                    finish();
+                                                }
+                                            });
+                                            builder.setCancelable(false);
+                                            builder.create().show();
+                                            return;
+                                        }
+                                    }
+                                    Intent intent = new Intent(CertificateActivity.this, SignUpActivity.class);
+                                    intent.putExtra("user", user);
+                                    startActivity(intent);
+                                    finish();
+                                }
+
+                                @Override
+                                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                }
+                            });
+
                         }
                     }
 

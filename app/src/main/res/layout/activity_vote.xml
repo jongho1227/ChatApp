@@ -3,16 +3,35 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical">
-    <TextView
-        android:id="@+id/do_vote"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="투표하기"
-        android:textSize="18dp"
-        android:textColor="@color/black"
-        android:textStyle="bold"
-        android:gravity="end"
-        android:padding="10dp"/>
+        android:orientation="horizontal">
+        <ImageView
+            android:id="@+id/back_arrow"
+            android:layout_gravity="center_vertical"
+            android:layout_width="30dp"
+            android:layout_height="match_parent"
+            android:layout_marginStart="10dp"
+            android:src="@drawable/ic_back_arrow_back_black_24dp"/>
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8"/>
+        <TextView
+            android:id="@+id/do_vote"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.3"
+            android:layout_gravity="end"
+            android:text="투표하기"
+            android:textSize="18dp"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:gravity="end"
+            android:padding="10dp"/>
+    </LinearLayout>
+
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent">

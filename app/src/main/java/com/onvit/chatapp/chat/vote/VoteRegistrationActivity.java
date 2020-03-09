@@ -72,10 +72,12 @@ public class VoteRegistrationActivity extends AppCompatActivity {
         ActionBar actionBar = getSupportActionBar();
         String chatName;
         toRoom = getIntent().getStringExtra("room");
-        if(toRoom.equals("normalChat")){
-            chatName = "회원채팅방 투표등록";
-        }else{
-            chatName = "임원채팅방 투표등록";
+        if (toRoom.equals("normalChat")) {
+            chatName = "회원채팅방 이미지목록";
+        } else if (toRoom.equals("officerChat")){
+            chatName = "임원채팅방 이미지목록";
+        } else{
+            chatName = toRoom;
         }
         actionBar.setTitle(chatName);
         actionBar.setDisplayHomeAsUpEnabled(true);

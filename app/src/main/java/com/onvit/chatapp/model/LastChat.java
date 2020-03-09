@@ -5,12 +5,12 @@ import java.util.Map;
 import java.util.Objects;
 
 //마지막채팅내용 및 각자 안읽은 메세지 개수 표시.
-public class LastChat {
+public class LastChat implements Comparable<LastChat>{
     private Map<String, Integer> users = new HashMap<>();
     private Map<String, Boolean> existUsers = new HashMap<>();
     private String chatName;
     private String lastChat;
-    private Object timestamp;
+    private long timestamp;
     private String photo;
 
     public LastChat() {
@@ -48,11 +48,11 @@ public class LastChat {
         this.lastChat = lastChat;
     }
 
-    public Object getTimestamp() {
+    public long getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(Object timestamp) {
+    public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
     }
 
@@ -87,5 +87,15 @@ public class LastChat {
     @Override
     public int hashCode() {
         return Objects.hash(chatName);
+    }
+
+    @Override
+    public int compareTo(LastChat lastChat) {
+        if(this.timestamp - lastChat.getTimestamp()>0){
+            return -1;
+        }else if(this.timestamp - lastChat.getTimestamp()<0){
+            return 1;
+        }
+        return 0;
     }
 }

@@ -1,6 +1,8 @@
 package com.onvit.chatapp.admin;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -26,7 +28,7 @@ import jxl.Workbook;
 
 public class AdminActivity extends AppCompatActivity implements View.OnClickListener {
     Button updateBtn, deleteChatBtn, updateUser;
-
+    Map<String, Object> nameList = new HashMap<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,8 +49,7 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
             case R.id.updateBtn:
                 //회원들 정보 넣음.
                 insertExel();
-//                updateInfo();
-//                aaa();//엑셀에 표시된 등급에 맞게 수정하는 쿼리.
+
                 break;
             case R.id.deleteChat:
                 final Date date = new Date();
@@ -61,109 +62,38 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
                 deleteChat(oldDate, chatName);
                 break;
             case R.id.updateUser:
-                updateUser();
+                aaa();//엑셀에 표시된 등급에 맞게 수정하는 쿼리.
                 break;
         }
     }
 
-    private void updateInfo() {
-        //병원이름 엑셀파일이랑 맞춤.
-        FirebaseDatabase.getInstance().getReference().child("Users").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                for (DataSnapshot item : dataSnapshot.getChildren()) {
-                    final User user = item.getValue(User.class);
-                    final String key = item.getKey();
-                    String phone = user.getTel().substring(0, 3) + "-" + user.getTel().substring(3, 7) + "-" + user.getTel().substring(7);
-                    FirebaseDatabase.getInstance().getReference().child("KCHA").orderByChild("phone").equalTo(phone).addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                if (dataSnapshot.getChildrenCount() == 1) {
-                                    Map<String, Object> allMap = new HashMap<>();
-                                    KCHA kcha = item.getValue(KCHA.class);
-                                    user.setHospital(kcha.getHospital());
-                                    allMap.put(key, user);
-                                    FirebaseDatabase.getInstance().getReference().child("Users").updateChildren(allMap);
-                                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("userInfo").updateChildren(allMap);
-                                    if (user.getGrade().equals("임원")) {
-                                        FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").updateChildren(allMap);
-                                    }
-
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                        }
-                    });
-
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-    }
-
-    private void updateUser() {
-        //유저 일반으로 들어가있는사람 -> 회원으로 변경
-        //비밀번호 없앴음.
-        FirebaseDatabase.getInstance().getReference().child("Users").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Map<String, Object> allMap = new HashMap<>();
-                Map<String, Object> officerMap = new HashMap<>();
-                for (DataSnapshot item : dataSnapshot.getChildren()) {
-                    String key = item.getKey();
-                    User user = item.getValue(User.class);
-                    if (user.getGrade().equals("일반")) {
-                        user.setGrade("회원");
-                    } else {
-                        officerMap.put(key, user);
-                    }
-                    allMap.put(key, user);
-                }
-                FirebaseDatabase.getInstance().getReference().child("Users").updateChildren(allMap);
-                FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("userInfo").updateChildren(allMap);
-                FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").updateChildren(officerMap);
-                Toast.makeText(AdminActivity.this, "업데이트완료", Toast.LENGTH_SHORT).show();
-
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
-    }
-
     private void deleteChat(final long date, final String chatName) {
-        FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments")
-                .orderByChild("timestamp")
-                .endAt(date).addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Map<String, Object> map = new HashMap<>();
-                for (DataSnapshot item : dataSnapshot.getChildren()) {
-                    map.put(item.getKey(), null);
-                }
-                FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments").updateChildren(map);
-                Toast.makeText(AdminActivity.this, "지워진 채팅갯수" + dataSnapshot.getChildrenCount() + "개", Toast.LENGTH_SHORT).show();
-            }
+//        FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments")
+//                .orderByChild("timestamp")
+//                .endAt(date).addListenerForSingleValueEvent(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+//                Map<String, Object> map = new HashMap<>();
+//                Log.d("삭제", dataSnapshot.getChildrenCount() + "");
+//                for (DataSnapshot item : dataSnapshot.getChildren()) {
+//                    map.put(item.getKey(), null);
+//                }
+//                FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments").updateChildren(map);
+//                Toast.makeText(AdminActivity.this, "지워진 채팅갯수" + dataSnapshot.getChildrenCount() + "개", Toast.LENGTH_SHORT).show();
+//            }
+//
+//            @Override
+//            public void onCancelled(@NonNull DatabaseError databaseError) {
+//
+//            }
+//        });
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
 
-            }
-        });
+
+
+
+
+
     }
 
     private void insertExel() {
@@ -183,7 +113,7 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
                 KCHA sb;
                 for (int row = rowIndexStart; row < rowTotal; row++) {
                     sb = new KCHA();
-                    for (int col = 1; col < colTotal - 3; col++) {
+                    for (int col = 1; col < colTotal-3; col++) {
                         String contents = sheet.getCell(col, row).getContents();
                         switch (col) {
                             case 1:
@@ -218,15 +148,25 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
                                 break;
                         }
                     }
-                    list.put(sb.getName(), sb);
-                    if (sb.getGrade().equals("0")) {
-                        normal++;
-                    } else {
-                        officer++;
+                    Log.d("인원", sb.toString());
+                    if(sb.getName()==null || sb.getName().trim().equals("")){
+                        Log.d("dd", "nodata");
+                    }else{
+                        total++;
+                        list.put(sb.getName()+total, sb);
+                        if (sb.getGrade().equals("0")) {
+                            normal++;
+                        } else {
+                            officer++;
+                        }
+                        Log.d("인원목록", sb.getName()+" : "+total+" : "+list.size());
                     }
-                    total++;
                 }
-                FirebaseDatabase.getInstance().getReference().child("KCHA").updateChildren(list);
+                Log.d("인원목록", list.toString());
+                Log.d("인원목록", list.size()+"");
+                nameList = list;
+                FirebaseDatabase.getInstance().getReference().child("KCHA").setValue(null);
+                FirebaseDatabase.getInstance().getReference().child("KCHA").setValue(list);
                 Toast.makeText(AdminActivity.this, "임원 : " + officer + "명," + "회원 : " + normal + "명," + "총원 : " + total + "명", Toast.LENGTH_SHORT).show();
             }
 
@@ -254,54 +194,49 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                             for (DataSnapshot item : dataSnapshot.getChildren()) {
                                 User user = item.getValue(User.class);
-                                if (phone.equals(user.getTel())) {
-                                    if (!user.getGrade().equals(grade)) {
-                                        user.setGrade(grade);
-                                        Map<String, Object> map = new HashMap<>();
-                                        map.put(item.getKey(), user);
-                                        FirebaseDatabase.getInstance().getReference().child("Users").updateChildren(map);
-                                    }
-                                    Map<String, Object> remove = new HashMap<>();
-                                    Map<String, Object> remove2 = new HashMap<>();
-                                    remove.put("normalChat/userInfo/" + user.getUid(), null);
-                                    remove.put("officerChat/userInfo/" + user.getUid(), null);
-                                    remove.put("normalChat/users/" + user.getUid(), null);
-                                    remove.put("officerChat/users/" + user.getUid(), null);
-                                    remove2.put("normalChat/chatName", "회원채팅방");
-                                    remove2.put("officerChat/chatName", "임원채팅방");
-                                    remove2.put("normalChat/users/" + user.getUid(), null);
-                                    remove2.put("officerChat/users/" + user.getUid(), null);
-                                    remove2.put("normalChat/existUsers/" + user.getUid(), null);
-                                    remove2.put("officerChat/existUsers/" + user.getUid(), null);
-                                    FirebaseDatabase.getInstance().getReference().child("groupChat").updateChildren(remove);
-                                    //lastChat방에 uid와 안읽은 메세지수 0으로 집어넣음.
-                                    FirebaseDatabase.getInstance().getReference().child("lastChat").updateChildren(remove2);
+                                if (phone.equals(user.getTel()) && kcha.getName().equals(user.getUserName())) {
 
                                     Map<String, Object> map = new HashMap<>();
                                     Map<String, Object> map2 = new HashMap<>();
-                                    //각각의 그룹채팅방에 유저 정보 / 접속여부를 넣음
-                                    if (grade.equals("임원")) {
-                                        map.put("normalChat/userInfo/" + user.getUid(), user);
-                                        map.put("officerChat/userInfo/" + user.getUid(), user);
-                                        map.put("normalChat/users/" + user.getUid(), false);
-                                        map.put("officerChat/users/" + user.getUid(), false);
-                                        map2.put("normalChat/chatName", "회원채팅방");
-                                        map2.put("officerChat/chatName", "임원채팅방");
-                                        map2.put("normalChat/users/" + user.getUid(), 0);
-                                        map2.put("officerChat/users/" + user.getUid(), 0);
-                                        map2.put("normalChat/existUsers/" + user.getUid(), true);
-                                        map2.put("officerChat/existUsers/" + user.getUid(), true);
-                                    } else {
-                                        map.put("normalChat/userInfo/" + user.getUid(), user);
-                                        map.put("normalChat/users/" + user.getUid(), false);
-                                        map2.put("normalChat/chatName", "회원채팅방");
-                                        map2.put("normalChat/users/" + user.getUid(), 0);
-                                        map2.put("normalChat/existUsers/" + user.getUid(), true);
+                                    Map<String, Object> map3 = new HashMap<>();
+                                    user.setUserName(kcha.getName());
+                                    user.setHospital(kcha.getHospital());
+
+                                    if(!grade.equals(user.getGrade())){
+                                        if(user.getGrade().equals("회원")){
+                                            // 회원->임원이 됐을경우는 임원쪽에 추가만 하면됨
+                                            user.setGrade(grade);
+                                            map.put("normalChat/userInfo/" + user.getUid(), user);
+                                            map.put("normalChat/users/" + user.getUid(), false);
+                                            map.put("officerChat/userInfo/" + user.getUid(), user);
+                                            map.put("officerChat/users/" + user.getUid(), false);
+                                            map2.put("officerChat/users/" + user.getUid(), 0);
+                                            map2.put("officerChat/existUsers/" + user.getUid(), true);
+                                        }else if(user.getGrade().equals("임원")){
+                                            // 임원->회원이 됐을경우는 임원쪽에서 삭제하면됨.
+                                            user.setGrade(grade);
+                                            map.put("normalChat/userInfo/" + user.getUid(), user);
+                                            map.put("normalChat/users/" + user.getUid(), false);
+                                            map.put("officerChat/userInfo/" + user.getUid(), null);
+                                            map.put("officerChat/users/" + user.getUid(), null);
+                                            map2.put("officerChat/users/" + user.getUid(), null);
+                                            map2.put("officerChat/existUsers/" + user.getUid(), null);
+
+                                        }
+                                    }else{
+                                        if(user.getGrade().equals("회원")){
+                                            map.put("normalChat/userInfo/" + user.getUid(), user);
+                                            map.put("normalChat/users/" + user.getUid(), false);
+                                        }else if(user.getGrade().equals("임원")){
+                                            map.put("normalChat/userInfo/" + user.getUid(), user);
+                                            map.put("officerChat/userInfo/" + user.getUid(), user);
+                                            map.put("normalChat/users/" + user.getUid(), false);
+                                            map.put("officerChat/users/" + user.getUid(), false);
+                                        }
                                     }
-
+                                    map3.put(item.getKey(), user);
+                                    FirebaseDatabase.getInstance().getReference().child("Users").updateChildren(map3);
                                     FirebaseDatabase.getInstance().getReference().child("groupChat").updateChildren(map);
-
-                                    //lastChat방에 uid와 안읽은 메세지수 0으로 집어넣음.
                                     FirebaseDatabase.getInstance().getReference().child("lastChat").updateChildren(map2);
                                 }
 

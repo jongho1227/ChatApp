@@ -31,7 +31,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme.StatusBar"
         android:usesCleartextTraffic="true">
-        <activity android:name=".chat.vote.VoteRegistrationActivity"></activity>
+        <activity android:name=".chat.SelectPeopleActivity"></activity>
+        <activity android:name=".chat.vote.VoteRegistrationActivity" />
         <activity android:name=".chat.vote.VoteListActivity" />
         <activity android:name=".chat.vote.VoteDetailActivity" />
         <activity android:name=".chat.ImgActivity" />
