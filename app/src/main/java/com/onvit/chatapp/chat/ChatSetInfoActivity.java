@@ -51,7 +51,7 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
     LinearLayout chat_info_linear_layout;
     RecyclerView recyclerView;
     TextView vote, file, img, plus, out;
-    ArrayList<User> userlist;
+    ArrayList<User> userList;
     private String uid;
     private String toRoom;
     private List<String> deleteKey = new ArrayList<>();
@@ -71,8 +71,8 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
         file = findViewById(R.id.file);
         img = findViewById(R.id.img);
         out = findViewById(R.id.out);
-        userlist = getIntent().getParcelableArrayListExtra("userInfo");
-        Log.d("유저정보", userlist.toString());
+        userList = getIntent().getParcelableArrayListExtra("userInfo");
+        Log.d("유저정보", userList.toString());
 
         WindowManager.LayoutParams wmlp = getWindow().getAttributes();
         wmlp.gravity = Gravity.TOP | Gravity.END;
@@ -98,7 +98,7 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
 
 
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(new PeopleInfoRecyclerAdapter(userlist));
+        recyclerView.setAdapter(new PeopleInfoRecyclerAdapter(userList));
 
         vote.setOnClickListener(this);
         file.setOnClickListener(this);
@@ -141,6 +141,7 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
             case R.id.vote:
                 intent = new Intent(ChatSetInfoActivity.this, VoteListActivity.class);
                 intent.putExtra("room", getIntent().getStringExtra("room"));
+                intent.putParcelableArrayListExtra("userList", userList);
                 getIntent().putExtra("on", "on");
                 startActivity(intent);
                 overridePendingTransition(R.anim.fromleft, R.anim.toright);
@@ -155,7 +156,7 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
             case R.id.img:
                 intent = new Intent(ChatSetInfoActivity.this, ImgActivity.class);
                 intent.putExtra("room", getIntent().getStringExtra("room"));
-                intent.putParcelableArrayListExtra("userlist", userlist);
+                intent.putParcelableArrayListExtra("userlist", userList);
                 getIntent().putExtra("on", "on");
                 startActivity(intent);
                 overridePendingTransition(R.anim.fromleft, R.anim.toright);
@@ -163,7 +164,7 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
             case R.id.plus_ps:
                 intent = new Intent(ChatSetInfoActivity.this, SelectPeopleActivity.class);
                 intent.putExtra("room", getIntent().getStringExtra("room"));
-                intent.putParcelableArrayListExtra("userlist", userlist);
+                intent.putParcelableArrayListExtra("userlist", userList);
                 intent.putExtra("plus", "plus");
                 getIntent().putExtra("on", "on");
                 startActivity(intent);
@@ -176,6 +177,15 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                 builder.setPositiveButton("예", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
+                        AlertDialog.Builder builder = new AlertDialog.Builder(ChatSetInfoActivity.this);
+                        View view = LayoutInflater.from(ChatSetInfoActivity.this).inflate(R.layout.loading, null);
+                        TextView tx = view.findViewById(R.id.loading_text);
+                        tx.setText("채팅내역을 삭제하는 중입니다.");
+                        builder.setView(view);
+                        AlertDialog d = builder.create();
+                        d.setCanceledOnTouchOutside(false);
+                        d.setCancelable(false);
+                        d.show();
                         final Map<String, Object> map = new HashMap<>();
                         final Map<String, Object> map2 = new HashMap<>();
                         final Map<String, Object> voteMap = new HashMap<>();
@@ -199,8 +209,6 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                                             map.put("comments/" + i.getKey() + "/existUser/" + uid, null);
                                             map.put("comments/" + i.getKey() + "/readUsers/" + uid, null);
                                         }
-
-                                        map.put("userInfo/" + uid, null);
 
                                         map.put("users/" + uid, null);
 
@@ -240,7 +248,7 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                                                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                                                 ChatModel chatModel = dataSnapshot.getValue(ChatModel.class);
                                                                 Log.d("없앰", chatModel.toString());
-                                                                if (chatModel.userInfo == null || chatModel.userInfo.size() == 0) {
+                                                                if (chatModel.users == null || chatModel.users.size() == 0) {
                                                                     Log.d("없앰", "들어옴");
                                                                     FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).setValue(null);
                                                                     FirebaseDatabase.getInstance().getReference().child("lastChat").child(toRoom).setValue(null);

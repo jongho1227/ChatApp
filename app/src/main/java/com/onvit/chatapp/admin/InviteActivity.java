@@ -34,41 +34,29 @@ public class InviteActivity extends AppCompatActivity {
         FirebaseDatabase.getInstance().getReference().child("KCHA").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Log.d("가입자", dataSnapshot.getChildrenCount()+"");
-                for(DataSnapshot item : dataSnapshot.getChildren()){
+                for (DataSnapshot item : dataSnapshot.getChildren()) {
                     KCHA kcha = item.getValue(KCHA.class);
                     User user = new User();
                     user.setUserName(kcha.getName());
-                    user.setTel(kcha.getPhone().replaceAll("-",""));
+                    user.setTel(kcha.getPhone().replaceAll("-", ""));
                     user.setHospital(kcha.getHospital());
                     unSignUser.add(user);
-
                 }
-                Log.d("가입자", "총회원 : "+unSignUser.size()+"");
+                Log.d("전체가입자", unSignUser.size()+"");
                 FirebaseDatabase.getInstance().getReference().child("Users").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                        for(DataSnapshot item : dataSnapshot.getChildren()){
+                        for (DataSnapshot item : dataSnapshot.getChildren()) {
                             User u = item.getValue(User.class);
                             u.setUserName(u.getUserName().trim());
                             unSignUser.remove(u);
                             signUser.add(u);
                         }
-                        Log.d("가입자", "미가입자 : "+unSignUser.size()+"");
-                        Log.d("가입자", "총가입자 : "+signUser.size()+"");
-
                         Collections.sort(signUser);
                         Collections.sort(unSignUser);
-
-                        for(User a : unSignUser){
-                            for(User b : signUser){
-                                if(a.getUserName().equals(b.getUserName())){
-                                    Log.d("중복자", a.getUserName());
-                                }
-                            }
-                        }
-
-                        signPageAdapter = new SignPageAdapter(getSupportFragmentManager(),2, signUser, unSignUser);
+                        Log.d("전체가입자", signUser.size()+"");
+                        Log.d("전체가입자", unSignUser.size()+"");
+                        signPageAdapter = new SignPageAdapter(getSupportFragmentManager(), 2, signUser, unSignUser);
                         viewPager = findViewById(R.id.view_pager);
                         tabLayout = findViewById(R.id.tabLayout);
                         signPageAdapter.notifyDataSetChanged();

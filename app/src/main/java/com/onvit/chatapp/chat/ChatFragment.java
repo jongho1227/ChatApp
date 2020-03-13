@@ -264,27 +264,19 @@ public class ChatFragment extends Fragment {
                                 @Override
                                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                     Map<String, Object> map = new HashMap<>();
-                                    for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                        ChatModel.Comment comment = item.getValue(ChatModel.Comment.class);
-                                        if (comment != null) {
-                                            comment.readUsers.put(uid, true);
-                                            map.put(Objects.requireNonNull(item.getKey()), comment);
+                                    if(dataSnapshot.getChildrenCount()>0){
+                                        for (DataSnapshot item : dataSnapshot.getChildren()) {
+                                            map.put(Objects.requireNonNull(item.getKey())+"/readUsers/"+uid, true);
                                         }
+                                        databaseReference.child("groupChat").child(keys.get(position)).child("comments").updateChildren(map).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            @Override
+                                            public void onSuccess(Void aVoid) {
+                                                goChatRoom(view, dialog);
+                                            }
+                                        });
+                                    }else{
+                                        goChatRoom(view, dialog);
                                     }
-                                    databaseReference.child("groupChat").child(keys.get(position)).child("comments").updateChildren(map).addOnSuccessListener(new OnSuccessListener<Void>() {
-                                        @Override
-                                        public void onSuccess(Void aVoid) {
-                                            Intent intent;
-                                            intent = new Intent(view.getContext(), GroupMessageActivity.class);
-                                            intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                                            intent.putExtra("toRoom", keys.get(position)); // 방이름
-                                            intent.putExtra("chatCount", (Long) countMap.get(keys.get(position)));// 채팅숫자
-                                            ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(view.getContext(), R.anim.frombottom, R.anim.totop);
-                                            startActivity(intent, activityOptions.toBundle());
-                                            dialog.dismiss();
-                                        }
-                                    });
-
                                 }
 
                                 @Override
@@ -292,6 +284,17 @@ public class ChatFragment extends Fragment {
 
                                 }
                             });
+                }
+
+                private void goChatRoom(View view, AlertDialog dialog) {
+                    Intent intent = null;
+                    intent = new Intent(view.getContext(), GroupMessageActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                    intent.putExtra("toRoom", keys.get(position)); // 방이름
+                    intent.putExtra("chatCount", (Long) countMap.get(keys.get(position)));// 채팅숫자
+                    ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(view.getContext(), R.anim.frombottom, R.anim.totop);
+                    startActivity(intent, activityOptions.toBundle());
+                    dialog.dismiss();
                 }
             });
 

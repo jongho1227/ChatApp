@@ -29,6 +29,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.onvit.chatapp.model.UserMap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,7 +39,9 @@ public class PeopleFragment extends Fragment {
     private Toolbar chatToolbar;
     private AppCompatActivity activity;
     private ValueEventListener valueEventListener;
-    private List<User> userList = new ArrayList<>();
+    private List<User> userList;
+    private PeopleFragmentRecyclerAdapter pf = new PeopleFragmentRecyclerAdapter();
+
     public PeopleFragment() {
 
     }
@@ -52,9 +55,12 @@ public class PeopleFragment extends Fragment {
         activity.setSupportActionBar(chatToolbar);
         ActionBar actionBar = activity.getSupportActionBar();
         actionBar.setTitle("연락처 목록");
+
+        userList = UserMap.getUser();
+
         RecyclerView recyclerView = view.findViewById(R.id.peoplefragment_recyclerview);
         recyclerView.setLayoutManager(new LinearLayoutManager(inflater.getContext()));
-        recyclerView.setAdapter(new PeopleFragmentRecyclerAdapter());
+        recyclerView.setAdapter(pf);
 
         return view;
     }
@@ -66,20 +72,6 @@ public class PeopleFragment extends Fragment {
             valueEventListener = new ValueEventListener() { // Users데이터의 변화가 일어날때마다 콜백으로 호출됨.
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    // 가입한 유저들의 정보를 가지고옴.
-                    userList.clear();
-                    User user = null;
-                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                        if (FirebaseAuth.getInstance().getCurrentUser().getUid().equals(snapshot.getValue(User.class).getUid())) {
-                            user = snapshot.getValue(User.class);
-                            continue;
-                        }
-                        userList.add(snapshot.getValue(User.class));
-                    }
-                    // 유저들의 정보를 가나순으로 정렬하고 자신의 정보는 첫번째에 넣음.
-                    Collections.sort(userList);
-                    userList.add(0, user);
-
                     notifyDataSetChanged();
                 }
 
@@ -100,6 +92,7 @@ public class PeopleFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull CustomViewHolder holder, final int position) {
+            Log.d("홀더붙는순서(연락처)", position+"");
             //position0번 부터 붙음
 
             holder.lineText.setVisibility(View.GONE);

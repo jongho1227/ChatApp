@@ -56,11 +56,15 @@ public class SplashActivity extends AppCompatActivity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         firebaseAuth = FirebaseAuth.getInstance();
+//        firebaseAuth.signOut();
         mFirebaseRemoteConfig = FirebaseRemoteConfig.getInstance();
         FirebaseRemoteConfigSettings configSettings = new FirebaseRemoteConfigSettings.Builder()
                 .setMinimumFetchIntervalInSeconds(0) // 한시간에 최대 한번 요청할 수 있음. 한시간의 캐싱타임을 가짐.
                 .build();
         mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
+
+
+        //다 메인으로 옮겨서 실행.
 
         mFirebaseRemoteConfig.fetchAndActivate()
                 .addOnCompleteListener(this, new OnCompleteListener<Boolean>() {
@@ -68,6 +72,7 @@ public class SplashActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<Boolean> task) {
                         if (task.isSuccessful()) {
                             boolean updated = task.getResult();
+                            Log.d("원격", "Config params updated: " + updated);
 
 
                         } else {
@@ -88,18 +93,19 @@ public class SplashActivity extends AppCompatActivity {
         String serverKey = mFirebaseRemoteConfig.getString("serverKey");
         PreferenceManager.setString(SplashActivity.this, "serverKey", serverKey);
 
-            PackageInfo p = null;
-            try {
-                p = getPackageManager().getPackageInfo(getPackageName(), 0);
-            } catch (PackageManager.NameNotFoundException e) {
-                e.printStackTrace();
-            }
-            long version = 0;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                version = p.getLongVersionCode();
-            } else {
-                version = p.versionCode;
+        PackageInfo p = null;
+        try {
+            p = getPackageManager().getPackageInfo(getPackageName(), 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
         }
+        long version = 0;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            version = p.getLongVersionCode();
+        } else {
+            version = p.versionCode;
+        }
+        Log.d("버전코드", version + "");
         if (versionCode != version) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setMessage(updateMessage).setPositiveButton("확인", new DialogInterface.OnClickListener() {
@@ -126,53 +132,29 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void createNotificationChannel() {
-
-        //알림 온&오프, 각 다른 알림채널 만들어서 적용시켜야함.
-
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(getString(R.string.vibrate),
                     "진동",
                     NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setVibrationPattern(new long[]{0, 500});
+            channel.setVibrationPattern(new long[]{0, 500}); // 진동없애는거? 삭제하고 다시 깔아야 적용.
             channel.enableVibration(true);
             notificationManager.createNotificationChannel(channel);
+
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(getString(R.string.noVibrate),
                     "무음",
                     NotificationManager.IMPORTANCE_LOW);
-            channel.setVibrationPattern(new long[]{0});
+            channel.setVibrationPattern(new long[]{0}); // 진동없애는거? 삭제하고 다시 깔아야 적용.
             channel.enableVibration(true);
             notificationManager.createNotificationChannel(channel);
         }
     }
 
     private void initSplash() {
-
-        FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                Map<String, Object> map = new HashMap<>();
-                for(DataSnapshot item : dataSnapshot.getChildren()){
-                    User user = item.getValue(User.class);
-                    if(user.getGrade().equals("회원")){
-                        map.put(item.getKey(),null);
-                    }else{
-                        map.put(item.getKey(),user);
-                    }
-                }
-                FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").updateChildren(map);
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-
-            }
-        });
-
 
         if (PreferenceManager.getString(SplashActivity.this, "name") == null || PreferenceManager.getString(SplashActivity.this, "name").equals("")
                 || FirebaseAuth.getInstance().getCurrentUser() == null) {
@@ -195,8 +177,6 @@ public class SplashActivity extends AppCompatActivity {
                         if (snapshot.getValue(User.class).getUserName() == null) {
                             Map<String, Object> map = new HashMap<>();
                             map.put("Users/" + snapshot.getKey(), null);
-                            map.put("groupChat/normalChat/userInfo/" + snapshot.getKey(), null);
-                            map.put("groupChat/officerChat/userInfo/" + snapshot.getKey(), null);
                             map.put("groupChat/normalChat/users/" + snapshot.getKey(), null);
                             map.put("groupChat/officerChat/users/" + snapshot.getKey(), null);
                             map.put("lastChat/normalChat/existUsers/" + snapshot.getKey(), null);
@@ -221,6 +201,9 @@ public class SplashActivity extends AppCompatActivity {
                             if ("text/plain".equals(type)) {
                                 text = intent.getStringExtra(Intent.EXTRA_TEXT);
                                 Intent intent1 = new Intent(SplashActivity.this, MainActivity.class);
+                                Log.d("텍스트 공유", text);
+                                //텍스트가 길면 텍스트로 공유내용이 다 넘어오지 않음
+                                // 카톡의 경우 파일로 변환해서 보내는것같음.
                                 intent1.putExtra("text", text);
                                 intent1.putExtra("user", user);
                                 intent1.setAction(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -230,6 +213,8 @@ public class SplashActivity extends AppCompatActivity {
                                 Intent intent1 = new Intent(SplashActivity.this, MainActivity.class);
                                 uri = intent.getParcelableExtra(Intent.EXTRA_STREAM);
                                 final Uri convertUri = getConvertUri(uri);
+                                Log.d("이미지 공유", uri + "");
+                                Log.d("이미지 공유", convertUri + "");
                                 if (convertUri != null) {
                                     intent1.putExtra("shareUri", convertUri);
                                     intent1.putExtra("filePath", filePath);

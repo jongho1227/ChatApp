@@ -42,9 +42,11 @@
 
         <TextView
             android:id="@+id/chatitem_textview_lastMessage"
-            android:layout_width="240dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_below="@+id/chatitem_textview_title"
+            android:layout_alignParentStart="true"
+            android:layout_toStartOf="@+id/chatitem_textview_timestamp"
             android:textSize="20dp"
             android:textColor="@android:color/darker_gray"
             android:maxLines="2"

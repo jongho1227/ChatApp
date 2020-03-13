@@ -17,8 +17,8 @@ import java.util.List;
 
 public class SignPageAdapter extends FragmentStatePagerAdapter { // 프래그먼트 변화시켜야 할때 이거 상속받고 맨아래있는거 오버라이드.
     List<Fragment> mList;
-    List<User> signUser;
-    List<User> unSignUser;
+    List<User> signUserList;
+    List<User> unSignUserList;
     public SignPageAdapter(@NonNull FragmentManager fm, final int a, List<User> signUser, List<User> UnSignUser) {
         super(fm, a);
         mList = new ArrayList<>();
@@ -26,14 +26,14 @@ public class SignPageAdapter extends FragmentStatePagerAdapter { // 프래그먼
         final SignedFragment signedFragment = new SignedFragment();
         final UnsignedFragment unsignedFragment = new UnsignedFragment();
 
-        this.signUser = signUser;
-        this.unSignUser = UnSignUser;
+        this.signUserList = signUser;
+        this.unSignUserList = UnSignUser;
 
         final Bundle sign = new Bundle();
         final Bundle unSign = new Bundle();
 
-        sign.putParcelableArrayList("sign", (ArrayList<? extends Parcelable>) signUser);
-        unSign.putParcelableArrayList("unSign", (ArrayList<? extends Parcelable>) unSignUser);
+        sign.putParcelableArrayList("sign", (ArrayList<? extends Parcelable>) signUserList);
+        unSign.putParcelableArrayList("unSign", (ArrayList<? extends Parcelable>) unSignUserList);
 
         signedFragment.setArguments(sign);
         unsignedFragment.setArguments(unSign);
@@ -57,9 +57,9 @@ public class SignPageAdapter extends FragmentStatePagerAdapter { // 프래그먼
     @Override
     public CharSequence getPageTitle(int position) {
         if (position == 0) {
-            return "가입자 : "+signUser.size();
+            return "가입자 : "+ signUserList.size();
         } else if (position == 1) {
-            return "미가입자 : "+unSignUser.size() ;
+            return "미가입자 : "+ unSignUserList.size() ;
         }
         return null;
     }

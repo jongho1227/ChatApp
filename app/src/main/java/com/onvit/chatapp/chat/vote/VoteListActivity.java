@@ -22,6 +22,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.onvit.chatapp.R;
+import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.model.Vote;
 
 import java.text.SimpleDateFormat;
@@ -38,6 +39,7 @@ public class VoteListActivity extends AppCompatActivity {
     private String toRoom, uid;
     private RecyclerView recyclerView;
     List<Vote> voteList = new ArrayList<>();
+    ArrayList<User> userList;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,14 +52,15 @@ public class VoteListActivity extends AppCompatActivity {
         String chatName;
         toRoom = getIntent().getStringExtra("room");
         if (toRoom.equals("normalChat")) {
-            chatName = "회원채팅방 이미지목록";
+            chatName = "회원채팅방 투표목록";
         } else if (toRoom.equals("officerChat")){
-            chatName = "임원채팅방 이미지목록";
+            chatName = "임원채팅방 투표목록";
         } else{
-            chatName = toRoom;
+            chatName = toRoom +"투표목록";
         }
         actionBar.setTitle(chatName);
         actionBar.setDisplayHomeAsUpEnabled(true);
+        userList = getIntent().getParcelableArrayListExtra("userList");
 
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
@@ -67,6 +70,7 @@ public class VoteListActivity extends AppCompatActivity {
             public void onClick(View view) {
                 Intent intent = new Intent(VoteListActivity.this, VoteRegistrationActivity.class);
                 intent.putExtra("room", toRoom);
+                intent.putParcelableArrayListExtra("userList", userList);
                 getIntent().putExtra("on", "on");
                 startActivity(intent);
                 overridePendingTransition(R.anim.fromleft, R.anim.toright);
@@ -195,6 +199,7 @@ public class VoteListActivity extends AppCompatActivity {
                 public void onClick(View view) {
                     final String vote_key = voteList.get(position).getKey();
                     Intent intent = new Intent(VoteListActivity.this, VoteActivity.class);
+                    intent.putParcelableArrayListExtra("userList", userList);
                     getIntent().putExtra("on","on");
                     intent.putExtra("key", vote_key);
                     intent.putExtra("room", toRoom);
@@ -233,4 +238,3 @@ public class VoteListActivity extends AppCompatActivity {
         }
     }
 }
-

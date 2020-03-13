@@ -25,6 +25,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.onvit.chatapp.R;
+import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.model.Vote;
 import com.onvit.chatapp.util.PreferenceManager;
 
@@ -45,6 +46,7 @@ public class VoteActivity extends AppCompatActivity {
     private SimpleDateFormat changeDateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 E요일", Locale.KOREA);
     private String flag;
     private ImageView back;
+    ArrayList<User> userList;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +57,7 @@ public class VoteActivity extends AppCompatActivity {
         uid = PreferenceManager.getString(VoteActivity.this, "uid");
         flag = getIntent().getStringExtra("flag");
         back = findViewById(R.id.back_arrow);
+        userList = getIntent().getParcelableArrayListExtra("userList");
         databaseReference.child("Vote").child(toRoom).child(vote_key).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
@@ -133,6 +136,7 @@ public class VoteActivity extends AppCompatActivity {
                         intent.putExtra("join", (Serializable) join);
                         intent.putExtra("detail", (Serializable) detailUser);
                         intent.putExtra("cUser", (Serializable) cUser);
+                        intent.putParcelableArrayListExtra("userList", userList);
                         intent.putExtra("room", toRoom);
                         startActivity(intent);
                     }

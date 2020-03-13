@@ -44,4 +44,5 @@ dependencies {
     implementation "me.leolin:ShortcutBadger:1.1.22@aar"
     implementation 'com.karumi:dexter:5.0.0'
     implementation 'com.github.mahimrocky:EventCalender:v1.0.0'
+    implementation 'androidx.exifinterface:exifinterface:1.1.0-beta01'
 }

@@ -115,7 +115,6 @@ public class SelectPeopleActivity extends AppCompatActivity {
                             Map<String, Boolean> existUser = new HashMap<>();
                             Map<String, Integer> users = new HashMap<>();
                             for (User u : pList) {
-                                chatModel.userInfo.put(u.getUid(), u);
                                 chatModel.users.put(u.getUid(), false);
                                 existUser.put(u.getUid(), true);
                                 users.put(u.getUid(), 0);
@@ -166,7 +165,6 @@ public class SelectPeopleActivity extends AppCompatActivity {
                     Map<String, Object> map = new HashMap<>();
                     Map<String, Object> map2 = new HashMap<>();
                     for (User u : pList) {
-                        map.put("userInfo/" + u.getUid(), u);
                         map.put("users/" + u.getUid(), false);
                         map2.put("existUsers/" + u.getUid(), true);
                         map2.put("users/" + u.getUid(), 0);

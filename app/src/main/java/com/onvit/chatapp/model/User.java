@@ -154,7 +154,7 @@ public class User implements Comparable<User>, Parcelable {
         if (o == null || getClass() != o.getClass()) return false;
         User user = (User) o;
         return Objects.equals(userName, user.userName) &&
-                Objects.equals(tel, user.tel);
+                Objects.equals(tel, user.tel) || Objects.equals(uid, user.uid);
     }
 
     @Override

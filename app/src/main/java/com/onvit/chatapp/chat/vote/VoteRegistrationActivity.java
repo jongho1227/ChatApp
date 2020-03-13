@@ -61,6 +61,9 @@ public class VoteRegistrationActivity extends AppCompatActivity {
     private List<String> registration_ids;
     private Map<String, Object> userList;
     SimpleDateFormat sd = new SimpleDateFormat("yyyy년 MM월 dd일");
+    ArrayList<User> userList2;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,15 +76,18 @@ public class VoteRegistrationActivity extends AppCompatActivity {
         String chatName;
         toRoom = getIntent().getStringExtra("room");
         if (toRoom.equals("normalChat")) {
-            chatName = "회원채팅방 이미지목록";
+            chatName = "회원채팅방 투표등록";
         } else if (toRoom.equals("officerChat")){
-            chatName = "임원채팅방 이미지목록";
+            chatName = "임원채팅방 투표등록";
         } else{
-            chatName = toRoom;
+            chatName = toRoom +"투표등록";
         }
         actionBar.setTitle(chatName);
         actionBar.setDisplayHomeAsUpEnabled(true);
 
+        userList2 = getIntent().getParcelableArrayListExtra("userList");
+        userList = new HashMap<>();
+        registration_ids = new ArrayList<>();
         radioGroup = findViewById(R.id.radio_group);
         radio_text = findViewById(R.id.radio_text);
         radio_date = findViewById(R.id.radio_date);
@@ -136,7 +142,6 @@ public class VoteRegistrationActivity extends AppCompatActivity {
         });
 
         //마감시간설정
-
         deadline.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -157,27 +162,14 @@ public class VoteRegistrationActivity extends AppCompatActivity {
             });
         }
 
-        databaseReference.child("groupChat").child(toRoom).child("userInfo").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                registration_ids = new ArrayList<>();
-                userList = new HashMap<>();
-                for(DataSnapshot i : dataSnapshot.getChildren()){
-                    User u = i.getValue(User.class);
-                    userList.put(u.getUid(), false);
-                    if(u.getUid().equals(uid)){
-                        continue;
-                    }
-                    registration_ids.add(u.getPushToken());
-                }
-
+        for(User u : userList2){
+            userList.put(u.getUid(), false);
+            if(u.getUid().equals(uid)){
+                continue;
             }
+            registration_ids.add(u.getPushToken());
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-            }
-        });
-
+        }
 
         //투표등록하기
         register.setOnClickListener(new View.OnClickListener() {
@@ -426,4 +418,3 @@ public class VoteRegistrationActivity extends AppCompatActivity {
         }
     }
 }
-

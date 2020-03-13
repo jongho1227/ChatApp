@@ -14,13 +14,17 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.google.firebase.storage.FirebaseStorage;
 import com.onvit.chatapp.R;
+import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.KCHA;
 import com.onvit.chatapp.model.User;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import jxl.Sheet;
@@ -29,6 +33,8 @@ import jxl.Workbook;
 public class AdminActivity extends AppCompatActivity implements View.OnClickListener {
     Button updateBtn, deleteChatBtn, updateUser;
     Map<String, Object> nameList = new HashMap<>();
+    private List<String> deleteKey = new ArrayList<>();
+    private List<String> deleteKey2 = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,12 +60,25 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
             case R.id.deleteChat:
                 final Date date = new Date();
                 long twoM = (24L * 60 * 60 * 1000 * 60);
-                long oldDate = date.getTime() - twoM;
+                final long oldDate = date.getTime() - twoM;
                 //두달지난거 삭제함.
-                String chatName = "normalChat";
-                deleteChat(oldDate, chatName);
-                chatName = "officerChat";
-                deleteChat(oldDate, chatName);
+                FirebaseDatabase.getInstance().getReference().child("groupChat").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        for(DataSnapshot i : dataSnapshot.getChildren()){
+                            String chatName = i.getKey();
+                            Log.d("채팅방", chatName);
+                            deleteChat(oldDate, chatName);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+
+
                 break;
             case R.id.updateUser:
                 aaa();//엑셀에 표시된 등급에 맞게 수정하는 쿼리.
@@ -68,32 +87,44 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
     }
 
     private void deleteChat(final long date, final String chatName) {
-//        FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments")
-//                .orderByChild("timestamp")
-//                .endAt(date).addListenerForSingleValueEvent(new ValueEventListener() {
-//            @Override
-//            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-//                Map<String, Object> map = new HashMap<>();
-//                Log.d("삭제", dataSnapshot.getChildrenCount() + "");
-//                for (DataSnapshot item : dataSnapshot.getChildren()) {
-//                    map.put(item.getKey(), null);
-//                }
-//                FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments").updateChildren(map);
-//                Toast.makeText(AdminActivity.this, "지워진 채팅갯수" + dataSnapshot.getChildrenCount() + "개", Toast.LENGTH_SHORT).show();
-//            }
-//
-//            @Override
-//            public void onCancelled(@NonNull DatabaseError databaseError) {
-//
-//            }
-//        });
+        FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments")
+                .orderByChild("timestamp")
+                .endAt(date).addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                Map<String, Object> map = new HashMap<>();
+                Log.d("삭제", dataSnapshot.getChildrenCount() + "");
+                for (DataSnapshot item : dataSnapshot.getChildren()) {
+                    map.put(item.getKey(), null);
+                    ChatModel.Comment comment = item.getValue(ChatModel.Comment.class);
 
+                    if (comment.getType().equals("img")) {
+                        deleteKey.add(item.getKey());
+                    }
+                    if (comment.getType().equals("file")) {
+                        int a = comment.getMessage().lastIndexOf("https");
+                        int b = comment.getMessage().substring(0, a).lastIndexOf(".");
+                        String ext = comment.getMessage().substring(0, a).substring(b + 1);
+                        deleteKey2.add(item.getKey() + "." + ext);
+                    }
+                }
+                for (String d : deleteKey) {
+                    FirebaseStorage.getInstance().getReference().child("Image Files").child(chatName).child(d).delete();
+                }
+                for (String d : deleteKey2) {
+                    FirebaseStorage.getInstance().getReference().child("Document Files").child(chatName).child(d).delete();
+                }
+                FirebaseDatabase.getInstance().getReference().child("groupChat").child(chatName).child("comments").updateChildren(map);
+                FirebaseDatabase.getInstance().getReference().child("Vote").child(chatName).updateChildren(map);
 
+                Toast.makeText(AdminActivity.this, String.format("%s채팅방 지워진 채팅갯수 : %d개", chatName, dataSnapshot.getChildrenCount()), Toast.LENGTH_SHORT).show();
+            }
 
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
 
-
-
-
+            }
+        });
     }
 
     private void insertExel() {
@@ -206,18 +237,12 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
                                         if(user.getGrade().equals("회원")){
                                             // 회원->임원이 됐을경우는 임원쪽에 추가만 하면됨
                                             user.setGrade(grade);
-                                            map.put("normalChat/userInfo/" + user.getUid(), user);
                                             map.put("normalChat/users/" + user.getUid(), false);
-                                            map.put("officerChat/userInfo/" + user.getUid(), user);
-                                            map.put("officerChat/users/" + user.getUid(), false);
                                             map2.put("officerChat/users/" + user.getUid(), 0);
                                             map2.put("officerChat/existUsers/" + user.getUid(), true);
                                         }else if(user.getGrade().equals("임원")){
                                             // 임원->회원이 됐을경우는 임원쪽에서 삭제하면됨.
                                             user.setGrade(grade);
-                                            map.put("normalChat/userInfo/" + user.getUid(), user);
-                                            map.put("normalChat/users/" + user.getUid(), false);
-                                            map.put("officerChat/userInfo/" + user.getUid(), null);
                                             map.put("officerChat/users/" + user.getUid(), null);
                                             map2.put("officerChat/users/" + user.getUid(), null);
                                             map2.put("officerChat/existUsers/" + user.getUid(), null);
@@ -225,11 +250,8 @@ public class AdminActivity extends AppCompatActivity implements View.OnClickList
                                         }
                                     }else{
                                         if(user.getGrade().equals("회원")){
-                                            map.put("normalChat/userInfo/" + user.getUid(), user);
                                             map.put("normalChat/users/" + user.getUid(), false);
                                         }else if(user.getGrade().equals("임원")){
-                                            map.put("normalChat/userInfo/" + user.getUid(), user);
-                                            map.put("officerChat/userInfo/" + user.getUid(), user);
                                             map.put("normalChat/users/" + user.getUid(), false);
                                             map.put("officerChat/users/" + user.getUid(), false);
                                         }

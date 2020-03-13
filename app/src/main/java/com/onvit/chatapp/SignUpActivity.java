@@ -253,15 +253,6 @@ public class SignUpActivity extends AppCompatActivity {
         FirebaseDatabase.getInstance().getReference().child("Users").updateChildren(map).addOnSuccessListener(new OnSuccessListener<Void>() {
             @Override
             public void onSuccess(Void aVoid) {
-                Map<String, Object> map = new HashMap<>();
-                if (modifyUser.getGrade().equals("임원")) {
-                    map.put("normalChat/userInfo/" + user.getUid(), modifyUser);
-                    map.put("officerChat/userInfo/" + user.getUid(), modifyUser);
-                } else {
-                    map.put("normalChat/userInfo/" + user.getUid(), modifyUser);
-                }
-
-                FirebaseDatabase.getInstance().getReference().child("groupChat").updateChildren(map);
                 PreferenceManager.setString(SignUpActivity.this, "name", modifyUser.getUserName());
                 PreferenceManager.setString(SignUpActivity.this, "hospital", modifyUser.getHospital());
                 PreferenceManager.setString(SignUpActivity.this, "phone", modifyUser.getTel());
@@ -333,10 +324,6 @@ public class SignUpActivity extends AppCompatActivity {
                         signUser.setPushToken("");
                         signUser.setUid(uid);
 
-                        //회원가입한 후 이름을 저장함.
-//                        UserProfileChangeRequest userProfileChangeRequest = new UserProfileChangeRequest.Builder().setDisplayName(name.getText().toString()).build();
-//                        task.getResult().getUser().updateProfile(userProfileChangeRequest);
-
                         if (imageUri != null) {
                             Bitmap bitmap = resize(SignUpActivity.this, imageUri, 500);
                             ExifInterface exif = null;
@@ -393,8 +380,6 @@ public class SignUpActivity extends AppCompatActivity {
                                 Map<String, Object> map2 = new HashMap<>();
                                 //각각의 그룹채팅방에 유저 정보 / 접속여부를 넣음
                                 if (user.getGrade().equals("임원")) {
-                                    map.put("normalChat/userInfo/" + uid, user);
-                                    map.put("officerChat/userInfo/" + uid, user);
                                     map.put("normalChat/users/" + uid, false);
                                     map.put("officerChat/users/" + uid, false);
                                     map2.put("normalChat/chatName", "회원채팅방");
@@ -404,7 +389,6 @@ public class SignUpActivity extends AppCompatActivity {
                                     map2.put("normalChat/existUsers/" + uid, true);
                                     map2.put("officerChat/existUsers/" + uid, true);
                                 } else {
-                                    map.put("normalChat/userInfo/" + uid, user);
                                     map.put("normalChat/users/" + uid, false);
                                     map2.put("normalChat/chatName", "회원채팅방");
                                     map2.put("normalChat/users/" + uid, 0);

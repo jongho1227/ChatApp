@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Objects;
 
 public class ChatModel {
-    public Map<String, User> userInfo = new HashMap<>();
     public Map<String, Boolean> users = new HashMap<>(); // 채팅방 유저들
     public Map<String, Comment> comments = new HashMap<>(); //채팅방의 대화내용
     public int id;
@@ -104,7 +103,6 @@ public class ChatModel {
     @Override
     public String toString() {
         return "ChatModel{" +
-                "userInfo=" + userInfo +
                 ", users=" + users +
                 ", comments=" + comments +
                 '}';

@@ -16,6 +16,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -60,6 +61,7 @@ public class SetupFragment extends Fragment implements View.OnClickListener {
         if (user.getHospital().equals("개발자") || user.getUserName().equals("박신병")) {
             inviteLayout.setVisibility(View.VISIBLE);
         }
+
         logout.setOnClickListener(this);
         admin.setOnClickListener(this);
         invite.setOnClickListener(this);
@@ -99,10 +101,7 @@ public class SetupFragment extends Fragment implements View.OnClickListener {
                 Map<String, Object> map = new HashMap<>();
                 map.put("pushToken", "");
                 FirebaseDatabase.getInstance().getReference().child("Users").child(uid).updateChildren(map);
-                FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("userInfo").child(uid).updateChildren(map);
-                if (user.getGrade().equals("임원")) {
-                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").child(uid).updateChildren(map);
-                }
+                NotificationManagerCompat.from(getActivity()).cancelAll();
                 intent = new Intent(activity, LoginActivity.class);
                 intent.putExtra("logOut", "logOut");
                 PreferenceManager.clear(activity);

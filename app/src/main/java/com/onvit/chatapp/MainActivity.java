@@ -18,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -42,19 +43,19 @@ import com.onvit.chatapp.chat.SelectGroupChatActivity;
 import com.onvit.chatapp.contact.PeopleFragment;
 import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.model.User;
+import com.onvit.chatapp.model.UserMap;
 import com.onvit.chatapp.notice.NoticeFragment;
 import com.onvit.chatapp.util.PreferenceManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
     private final static int PERMISSION_REQUEST_CODE = 1000;
     BottomNavigationMenuView bottomNavigationMenuView;
-    Fragment notice = new NoticeFragment();
-    Fragment people = new PeopleFragment();
-    Fragment shop = new ShoppingFragment();
+    BottomNavigationView bottomNavigationView;
     private FirebaseAuth firebaseAuth;
     private String text = null;
     private Uri uri = null;
@@ -62,8 +63,8 @@ public class MainActivity extends AppCompatActivity {
     private String uid;
     private ValueEventListener valueEventListener;
     private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
-    BottomNavigationView bottomNavigationView;
-
+    private Map<String, User> userMap;
+    private List<User> userList;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -76,6 +77,12 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         }
+
+        userMap = UserMap.getInstance();
+        UserMap.getUserMap();
+        userList = UserMap.getUser();
+        UserMap.getUserList();
+
         user = getIntent().getParcelableExtra("user");
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
         PreferenceManager.setString(MainActivity.this, "name", user.getUserName());
@@ -83,11 +90,13 @@ public class MainActivity extends AppCompatActivity {
         PreferenceManager.setString(MainActivity.this, "phone", user.getTel());
         PreferenceManager.setString(MainActivity.this, "uid", user.getUid());
 
+        final Fragment notice = new NoticeFragment();
+        final Fragment people = new PeopleFragment();
+        final Fragment shop = new ShoppingFragment();
 
         getIntent().addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         bottomNavigationView = findViewById(R.id.mainActivity_bottomNavigationView);
         getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, notice).commitAllowingStateLoss();
-
 
         bottomNavigationView.setOnNavigationItemSelectedListener(new BottomNavigationView.OnNavigationItemSelectedListener() {
             @Override
@@ -128,8 +137,8 @@ public class MainActivity extends AppCompatActivity {
         bottomNavigationMenuView = (BottomNavigationMenuView) bottomNavigationView.getChildAt(0);
         requestPermission();
         passPushTokenToServer();
-    }
 
+    }
 
     private void requestPermission() {
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
@@ -213,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         if (getIntent().getStringExtra("tag") != null) {
-            if (getIntent().getStringExtra("tag").equals("normalChat") || getIntent().getStringExtra("tag").equals("officerChat")) {
+            if (!getIntent().getStringExtra("tag").equals("notice")) {
                 getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new ChatFragment()).commitAllowingStateLoss();
                 bottomNavigationView.setSelectedItemId(R.id.action_chat);
                 getIntent().removeExtra("tag");
@@ -269,12 +278,6 @@ public class MainActivity extends AppCompatActivity {
                 String token = instanceIdResult.getToken();
                 user.setPushToken(token);
                 FirebaseDatabase.getInstance().getReference().child("Users").child(uid).setValue(user);
-                FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("userInfo").child(uid).setValue(user);
-
-                if (user.getGrade().equals("임원")) {
-                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").child(uid).setValue(user);
-                    ;
-                }
             }
         });
 
@@ -287,7 +290,7 @@ public class MainActivity extends AppCompatActivity {
         if (user.getHospital().equals("개발자")) {
             menu.findItem(R.id.admin).setVisible(true);
         }
-        if (user.getHospital().equals("개발자") || user.getHospital().equals("사무국장")) {
+        if (user.getHospital().equals("개발자") || user.getHospital().equals("삼선병원")) {
             menu.findItem(R.id.invite).setVisible(true);
         }
         return true;
@@ -303,10 +306,7 @@ public class MainActivity extends AppCompatActivity {
             Map<String, Object> map = new HashMap<>();
             map.put("pushToken", "");
             FirebaseDatabase.getInstance().getReference().child("Users").child(uid).updateChildren(map);
-            FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("userInfo").child(uid).updateChildren(map);
-            if (user.getGrade().equals("임원")) {
-                FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("userInfo").child(uid).updateChildren(map);
-            }
+            NotificationManagerCompat.from(this).cancelAll();
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             intent.putExtra("logOut", "logOut");
             PreferenceManager.clear(this);
