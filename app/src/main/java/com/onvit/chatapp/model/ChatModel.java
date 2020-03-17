@@ -1,5 +1,6 @@
 package com.onvit.chatapp.model;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -9,7 +10,7 @@ public class ChatModel {
     public Map<String, Comment> comments = new HashMap<>(); //채팅방의 대화내용
     public int id;
 
-    public static class Comment{
+    public static class Comment {
         public String uid;
         public String message;
         public Object timestamp;

@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class FileActivity extends AppCompatActivity {
@@ -135,7 +136,7 @@ public class FileActivity extends AppCompatActivity {
     class FileRecyclerAdapter extends RecyclerView.Adapter<FileRecyclerAdapter.FileViewHolder> {
 
 
-        public FileRecyclerAdapter() {
+        private FileRecyclerAdapter() {
 
         }
 
@@ -149,7 +150,7 @@ public class FileActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull final FileViewHolder holder, final int position) {
 
-            SimpleDateFormat sd = new SimpleDateFormat("yyyy년 MM월 dd일");
+            SimpleDateFormat sd = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
 
             long d = (long) list.get(position).timestamp;
 
@@ -180,7 +181,7 @@ public class FileActivity extends AppCompatActivity {
                             dir.mkdirs();
                             String filename = fileName[0];
                             final File file = new File(dir, filename);
-                            FirebaseStorage.getInstance().getReference().child("Document Files/" + list.get(position).key + "." + ext)
+                            FirebaseStorage.getInstance().getReference().child("Document Files/" +toRoom+"/"+ list.get(position).key + "." + ext)
                                     .getFile(file).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
                                 @Override
                                 public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
@@ -230,7 +231,7 @@ public class FileActivity extends AppCompatActivity {
         private class FileViewHolder extends RecyclerView.ViewHolder {
             TextView text, date;
 
-            public FileViewHolder(View v) {
+            private FileViewHolder(View v) {
                 super(v);
                 text = v.findViewById(R.id.file_name);
                 date = v.findViewById(R.id.date);

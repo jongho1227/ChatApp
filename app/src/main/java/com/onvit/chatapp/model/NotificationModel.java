@@ -23,7 +23,7 @@ public class NotificationModel {
         public String title;
         public String body;
         public String tag;
-//        public String click_action;
+        public String click_action;
     }
 
 }

@@ -12,6 +12,7 @@ import android.app.ActivityOptions;
 import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -36,10 +37,13 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.ChatModel;
+import com.onvit.chatapp.model.Img;
 import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.model.User;
+import com.onvit.chatapp.model.UserMap;
 import com.onvit.chatapp.util.Utiles;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -127,11 +131,15 @@ public class SelectPeopleActivity extends AppCompatActivity {
                             databaseReference.child("lastChat").child(chatName).setValue(lastChat).addOnCompleteListener(new OnCompleteListener<Void>() {
                                 @Override
                                 public void onComplete(@NonNull Task<Void> task) {
+                                    List<ChatModel.Comment> newComments = new ArrayList<>();
+                                    List<Img> img_list = new ArrayList<>();
                                     Toast.makeText(SelectPeopleActivity.this, "채팅방을 생성하였습니다.", Toast.LENGTH_SHORT).show();
                                     Intent intent = new Intent(SelectPeopleActivity.this, GroupMessageActivity.class);
                                     intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
                                     intent.putExtra("toRoom", chatName); // 방이름
                                     intent.putExtra("chatCount", 0);// 채팅숫자
+                                    UserMap.getComments().clear();
+                                    intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
                                     ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(SelectPeopleActivity.this, R.anim.frombottom, R.anim.totop);
                                     startActivity(intent, activityOptions.toBundle());
                                     finish();

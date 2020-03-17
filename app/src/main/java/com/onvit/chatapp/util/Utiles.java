@@ -25,6 +25,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class Utiles {
+    public static final int firstReadChatCount = 50;
     public static AlertDialog createLoadingDialog(Context context, String text) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
         View view = LayoutInflater.from(context).inflate(R.layout.loading, null);
@@ -53,7 +54,7 @@ public class Utiles {
         notificationModel.data.title = userName;
         notificationModel.data.body = message;
         notificationModel.data.tag = toRoom;
-//        notificationModel.data.click_action = "GroupMessage";
+        notificationModel.data.click_action = "GroupMessage";
         notificationModel.content_available = true;
         notificationModel.priority = "high";
         notificationModel.delay_while_idle = false;

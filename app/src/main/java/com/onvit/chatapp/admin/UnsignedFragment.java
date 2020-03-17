@@ -62,103 +62,103 @@ public class UnsignedFragment extends Fragment {
         tButton.setVisibility(View.VISIBLE);
         button.setVisibility(View.VISIBLE);
 
-        tButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Dexter.withActivity(getActivity()).withPermission(Manifest.permission.SEND_SMS)
-                        .withListener(new PermissionListener() {
-                            @Override
-                            public void onPermissionGranted(PermissionGrantedResponse response) {
-                                SmsManager smsManager = SmsManager.getDefault();
-                                smsManager.sendTextMessage("01044155014",null,"테스트문자전송",null,null);
-                                Toast.makeText(getContext(), "전송완료", Toast.LENGTH_SHORT).show();
-                            }
-
-                            @Override
-                            public void onPermissionDenied(PermissionDeniedResponse response) {
-
-                            }
-
-                            @Override
-                            public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
-
-                            }
-                        }).check();
-            }
-        });
-
-
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                final AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                View v = getLayoutInflater().from(getContext()).inflate(R.layout.invite_message, null);
-                final EditText e = v.findViewById(R.id.invite);
-                final EditText google = v.findViewById(R.id.google);
-                final EditText apple = v.findViewById(R.id.apple);
-                final Button send = v.findViewById(R.id.send);
-                final Button cancel = v.findViewById(R.id.cancel);
-                e.setText("대한지역병원협의회 앱이 출시되었습니다.\n" +
-                        "링크를 통해 가입해주세요.\n" +
-                        "감사합니다.");
-                google.setText(mFirebaseRemoteConfig.getString("google_store"));
-                apple.setText(mFirebaseRemoteConfig.getString("apple_store"));
-                builder.setView(v);
-                final AlertDialog dialog = builder.create();
-                dialog.show();
-                send.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        Dexter.withActivity(getActivity()).withPermission(Manifest.permission.SEND_SMS)
-                                .withListener(new PermissionListener() {
-                                    @Override
-                                    public void onPermissionGranted(PermissionGrantedResponse response) {
-                                        String s = e.getText().toString();
-                                        String g = google.getText().toString().trim();
-                                        String a = apple.getText().toString().trim();
-                                        int d = byteCheck(s, 80);
-                                        Log.d("글자제한", d + "");
-                                        if (d > 80) {
-                                            Toast.makeText(getContext(), "글자수 초과 현재:" + d + " 제한:80", Toast.LENGTH_SHORT).show();
-                                            return;
-                                        } else {
-                                            for (String phone : phone) {
-                                                SmsManager smsManager = SmsManager.getDefault();
-                                                if (!s.equals("")) {
-                                                    smsManager.sendTextMessage(phone, null, s, null, null);
-                                                    if (!g.equals("")) {
-                                                        smsManager.sendTextMessage(phone, null, "구글링크\n" + g, null, null);
-                                                    }
-                                                    if (!a.equals("")) {
-                                                        smsManager.sendTextMessage(phone, null, "애플링크\n" + a, null, null);
-                                                    }
-                                                }
-                                            }
-                                            Toast.makeText(getContext(), "전송완료", Toast.LENGTH_SHORT).show();
-                                            dialog.dismiss();
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onPermissionDenied(PermissionDeniedResponse response) {
-
-                                    }
-
-                                    @Override
-                                    public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
-
-                                    }
-                                }).check();
-                    }
-                });
-                cancel.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        dialog.dismiss();
-                    }
-                });
-            }
-        });
+//        tButton.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Dexter.withActivity(getActivity()).withPermission(Manifest.permission.SEND_SMS)
+//                        .withListener(new PermissionListener() {
+//                            @Override
+//                            public void onPermissionGranted(PermissionGrantedResponse response) {
+//                                SmsManager smsManager = SmsManager.getDefault();
+//                                smsManager.sendTextMessage("01044155014",null,"테스트문자전송",null,null);
+//                                Toast.makeText(getContext(), "전송완료", Toast.LENGTH_SHORT).show();
+//                            }
+//
+//                            @Override
+//                            public void onPermissionDenied(PermissionDeniedResponse response) {
+//
+//                            }
+//
+//                            @Override
+//                            public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
+//
+//                            }
+//                        }).check();
+//            }
+//        });
+//
+//
+//        button.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                final AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+//                View v = getLayoutInflater().from(getContext()).inflate(R.layout.invite_message, null);
+//                final EditText e = v.findViewById(R.id.invite);
+//                final EditText google = v.findViewById(R.id.google);
+//                final EditText apple = v.findViewById(R.id.apple);
+//                final Button send = v.findViewById(R.id.send);
+//                final Button cancel = v.findViewById(R.id.cancel);
+//                e.setText("대한지역병원협의회 앱이 출시되었습니다.\n" +
+//                        "링크를 통해 가입해주세요.\n" +
+//                        "감사합니다.");
+//                google.setText(mFirebaseRemoteConfig.getString("google_store"));
+//                apple.setText(mFirebaseRemoteConfig.getString("apple_store"));
+//                builder.setView(v);
+//                final AlertDialog dialog = builder.create();
+//                dialog.show();
+//                send.setOnClickListener(new View.OnClickListener() {
+//                    @Override
+//                    public void onClick(View view) {
+//                        Dexter.withActivity(getActivity()).withPermission(Manifest.permission.SEND_SMS)
+//                                .withListener(new PermissionListener() {
+//                                    @Override
+//                                    public void onPermissionGranted(PermissionGrantedResponse response) {
+//                                        String s = e.getText().toString();
+//                                        String g = google.getText().toString().trim();
+//                                        String a = apple.getText().toString().trim();
+//                                        int d = byteCheck(s, 80);
+//                                        Log.d("글자제한", d + "");
+//                                        if (d > 80) {
+//                                            Toast.makeText(getContext(), "글자수 초과 현재:" + d + " 제한:80", Toast.LENGTH_SHORT).show();
+//                                            return;
+//                                        } else {
+//                                            for (String phone : phone) {
+//                                                SmsManager smsManager = SmsManager.getDefault();
+//                                                if (!s.equals("")) {
+//                                                    smsManager.sendTextMessage(phone, null, s, null, null);
+//                                                    if (!g.equals("")) {
+//                                                        smsManager.sendTextMessage(phone, null, "구글링크\n" + g, null, null);
+//                                                    }
+//                                                    if (!a.equals("")) {
+//                                                        smsManager.sendTextMessage(phone, null, "애플링크\n" + a, null, null);
+//                                                    }
+//                                                }
+//                                            }
+//                                            Toast.makeText(getContext(), "전송완료", Toast.LENGTH_SHORT).show();
+//                                            dialog.dismiss();
+//                                        }
+//                                    }
+//
+//                                    @Override
+//                                    public void onPermissionDenied(PermissionDeniedResponse response) {
+//
+//                                    }
+//
+//                                    @Override
+//                                    public void onPermissionRationaleShouldBeShown(PermissionRequest permission, PermissionToken token) {
+//
+//                                    }
+//                                }).check();
+//                    }
+//                });
+//                cancel.setOnClickListener(new View.OnClickListener() {
+//                    @Override
+//                    public void onClick(View view) {
+//                        dialog.dismiss();
+//                    }
+//                });
+//            }
+//        });
 
         return view;
     }

@@ -58,7 +58,7 @@ public class SetupFragment extends Fragment implements View.OnClickListener {
         if (user.getHospital().equals("개발자")) {
             adminLayout.setVisibility(View.VISIBLE);
         }
-        if (user.getHospital().equals("개발자") || user.getUserName().equals("박신병")) {
+        if (user.getHospital().equals("개발자")) {
             inviteLayout.setVisibility(View.VISIBLE);
         }
 

@@ -1,27 +1,40 @@
 package com.onvit.chatapp;
 
 import android.Manifest;
+import android.app.ActivityOptions;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomnavigation.BottomNavigationItemView;
 import com.google.android.material.bottomnavigation.BottomNavigationMenuView;
@@ -39,18 +52,26 @@ import com.onvit.chatapp.admin.AdminActivity;
 import com.onvit.chatapp.admin.InviteActivity;
 import com.onvit.chatapp.admin.SetupFragment;
 import com.onvit.chatapp.chat.ChatFragment;
+import com.onvit.chatapp.chat.GroupMessageActivity;
 import com.onvit.chatapp.chat.SelectGroupChatActivity;
+import com.onvit.chatapp.chat.SelectPeopleActivity;
 import com.onvit.chatapp.contact.PeopleFragment;
+import com.onvit.chatapp.model.ChatModel;
+import com.onvit.chatapp.model.Img;
 import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.model.UserMap;
 import com.onvit.chatapp.notice.NoticeFragment;
 import com.onvit.chatapp.util.PreferenceManager;
+import com.onvit.chatapp.util.Utiles;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
     private final static int PERMISSION_REQUEST_CODE = 1000;
@@ -65,6 +86,10 @@ public class MainActivity extends AppCompatActivity {
     private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
     private Map<String, User> userMap;
     private List<User> userList;
+    private List<ChatModel.Comment> newComments = new ArrayList<>();
+    private List<Img> img_list = new ArrayList<>();
+    private final int firstReadChatCount = Utiles.firstReadChatCount;
+    private AlertDialog dialog;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -223,9 +248,19 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         if (getIntent().getStringExtra("tag") != null) {
             if (!getIntent().getStringExtra("tag").equals("notice")) {
+                final String toRoom = getIntent().getStringExtra("tag");
                 getSupportFragmentManager().beginTransaction().replace(R.id.mainActivity_fragmentLayout, new ChatFragment()).commitAllowingStateLoss();
                 bottomNavigationView.setSelectedItemId(R.id.action_chat);
-                getIntent().removeExtra("tag");
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                View noticeView = getLayoutInflater().from(MainActivity.this).inflate(R.layout.access, null);
+                builder.setView(noticeView);
+                dialog = builder.create();
+                dialog.setCanceledOnTouchOutside(false);
+                dialog.setCancelable(false);
+                dialog.show();
+                UserMap.clearComments();
+                new getMessage().execute(toRoom);
             }
         }
 
@@ -242,12 +277,12 @@ public class MainActivity extends AppCompatActivity {
                 for (final DataSnapshot item : dataSnapshot.getChildren()) {// normalChat, officerChat
                     final LastChat lastChat = item.getValue(LastChat.class);
 
-                    if(lastChat.getUsers()==null){
+                    if (lastChat.getUsers() == null) {
                         return;
                     }
-                    if(lastChat.getUsers().get(uid)==null){
+                    if (lastChat.getUsers().get(uid) == null) {
                         count += 0;
-                    }else{
+                    } else {
                         count += Integer.parseInt(lastChat.getUsers().get(uid) + "");
                     }
                 }
@@ -323,11 +358,92 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    private void goChatRoom(String toRoom) {
+        Intent intent = null;
+        intent = new Intent(MainActivity.this, GroupMessageActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("toRoom", toRoom); // 방이름
+        intent.putExtra("chatCount", newComments.size());// 채팅숫자
+        intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
+        UserMap.setComments(newComments);
+        ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(MainActivity.this, R.anim.frombottom, R.anim.totop);
+        getIntent().removeExtra("tag");
+        dialog.dismiss();
+        startActivity(intent, activityOptions.toBundle());
+
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
         if (valueEventListener != null) {
             databaseReference.child("lastChat").removeEventListener(valueEventListener); // 이벤트 제거.
+        }
+    }
+
+    private class getMessage extends AsyncTask<String, Void, Void> {
+        @Override
+        protected Void doInBackground(final String... strings) {
+            databaseReference.child("groupChat").child(strings[0]).child("comments").orderByChild("readUsers/" + uid).equalTo(false)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            Map<String, Object> map = new HashMap<>();
+                            if(dataSnapshot.getChildrenCount()>0){
+                                for (DataSnapshot item : dataSnapshot.getChildren()) {
+                                    map.put(Objects.requireNonNull(item.getKey())+"/readUsers/"+uid, true);
+                                }
+                                databaseReference.child("groupChat").child(strings[0]).child("comments").updateChildren(map);
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+            databaseReference.child("groupChat").child(strings[0]).child("comments").orderByChild("existUser/" + uid).equalTo(true).limitToLast(firstReadChatCount)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                            for(DataSnapshot i : dataSnapshot.getChildren()){
+                                ChatModel.Comment c = i.getValue(ChatModel.Comment.class);
+                                c.readUsers.put(uid, true);
+                                c.setKey(i.getKey());
+                                newComments.add(c);
+                                Log.d("채팅", c.toString());
+                                if (c.getType().equals("img")) {
+                                    Img img = new Img();
+                                    if (userMap.get(c.getUid()) == null) {
+                                        img.setName("(알수없음)");
+                                    } else {
+                                        img.setName(userMap.get(c.getUid()).getUserName());
+                                    }
+                                    String uri;
+                                    if (c.message.startsWith("http")) {
+                                        uri = c.message;
+                                    } else {
+                                        int firstIndex = c.message.indexOf("/");
+                                        int secondIndex = c.message.indexOf("/", firstIndex + 1);
+                                        uri = c.message.substring(secondIndex + 1);
+                                    }
+                                    img.setUri(uri);
+                                    String time = String.valueOf((long) c.getTimestamp());
+                                    img.setTime(time);
+                                    img_list.add(img);
+                                }
+                            }
+                            Map<String, Object> map = new HashMap<>();
+                            map.put(uid, 0);
+                            databaseReference.child("lastChat").child(strings[0]).child("users").updateChildren(map);
+                            goChatRoom(strings[0]);
+                        }
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                        }
+                    });
+            return null;
         }
     }
 }

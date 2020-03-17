@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.media.AudioManager;
 import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
@@ -108,16 +109,30 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         Intent intent = new Intent(this, SplashActivity.class);//알림 누르면 열리는 창
         String channelId;
         int v = getSharedPreferences(getPackageName(), MODE_PRIVATE).getInt("vibrate", 0);
+        AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if(v==0){
-            channelId = getString(R.string.vibrate);
+            channelId = getString(R.string.vibrate2);
+            //오레오버전 이하 진동 및 무음설정하는거.
+            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
+                audioManager.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
+            }
         }else{
             channelId = getString(R.string.noVibrate);
+            //오레오버전 이하 진동 및 무음설정하는거.
+            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
+                audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
+            }
         }
+
 
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra("tag", tag);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-                PendingIntent.FLAG_ONE_SHOT); // 원격으로 인텐트 실행하는거 앱이 꺼져있어도 실행하는거
+//        개별적인 작업을 하기 위해서는 pendingIntent를 생성할때마다 requestCode를 다르게 할당하고
+//        서로의 충돌을 피하기 위해서 flags는 FLAG_CANCEL_CURRENT 로 호출해야 한다.
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, id /* Request code */, intent,
+                PendingIntent.FLAG_CANCEL_CURRENT); // 원격으로 인텐트 실행하는거 앱이 꺼져있어도 실행하는거
 
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, channelId)
@@ -127,11 +142,16 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setAutoCancel(true) // 누르면 알림 없어짐
                 .setSound(defaultSoundUri)
                 .setContentIntent(pendingIntent);
-        if(v==0){
-            notificationBuilder.setDefaults(Notification.DEFAULT_LIGHTS | Notification.DEFAULT_SOUND).setVibrate(new long[]{0, 500});
+
+        //오레오버전 이하 진동 및 무음설정하는거.
+        if(channelId.equals(getString(R.string.vibrate2))){
+            notificationBuilder.setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setDefaults(Notification.DEFAULT_VIBRATE);
         }
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        if(channelId.equals(getString(R.string.noVibrate))){
+            notificationBuilder.setPriority(NotificationCompat.PRIORITY_LOW);
+        }
+
 
         notificationManager.notify(id /* ID of notification */, notificationBuilder.build());
     }

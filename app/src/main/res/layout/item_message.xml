@@ -191,12 +191,29 @@
                         </LinearLayout>
                     </LinearLayout>
                     <!--파일보내는거 여기까지-->
-
-                    <ImageView
-                        android:id="@+id/messageItem_image"
+                    <RelativeLayout
+                        android:id="@+id/img_rel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:visibility="gone" />
+                        android:visibility="gone">
+                        <ImageView
+                            android:id="@+id/messageItem_image"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:visibility="gone" />
+                        <ProgressBar
+                            android:id="@+id/progressbar"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignLeft="@id/messageItem_image"
+                            android:layout_alignTop="@id/messageItem_image"
+                            android:layout_alignRight="@id/messageItem_image"
+                            android:layout_alignBottom="@id/messageItem_image"
+                            android:layout_margin="1dp"
+                            android:gravity="center"
+                            android:visibility="gone"/>
+                    </RelativeLayout>
+
                     <TextView
                         android:id="@+id/messageItem_textView_thumbnail"
                         android:layout_width="match_parent"

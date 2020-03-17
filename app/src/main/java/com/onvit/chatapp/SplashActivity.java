@@ -63,7 +63,6 @@ public class SplashActivity extends AppCompatActivity {
                 .build();
         mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
 
-
         //다 메인으로 옮겨서 실행.
 
         mFirebaseRemoteConfig.fetchAndActivate()
@@ -79,11 +78,16 @@ public class SplashActivity extends AppCompatActivity {
                             Toast.makeText(SplashActivity.this, "Fetch failed",
                                     Toast.LENGTH_SHORT).show();
                         }
-                        versionCheck();
                     }
                 });
 
 
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        versionCheck();
     }
 
     void versionCheck() {
@@ -132,14 +136,25 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void createNotificationChannel() {
+
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(getString(R.string.vibrate),
+            //알림팝업띄우려고 한거.
+            //채널지울때 지우고 지운아이디로 생성하면 지웠던게 다시 복구됨. 다른아이디를 주어야 새로 생성됨.
+            if(notificationManager.getNotificationChannel(getString(R.string.vibrate))!=null){
+                if(notificationManager.getNotificationChannel(getString(R.string.vibrate)).getImportance()==NotificationManager.IMPORTANCE_LOW
+                        ||notificationManager.getNotificationChannel(getString(R.string.vibrate)).getImportance()==NotificationManager.IMPORTANCE_DEFAULT){
+                    notificationManager.deleteNotificationChannel(getString(R.string.vibrate));
+                }
+            }
+
+            NotificationChannel channel = new NotificationChannel(getString(R.string.vibrate2),
                     "진동",
-                    NotificationManager.IMPORTANCE_DEFAULT);
+                    NotificationManager.IMPORTANCE_HIGH);
             channel.setVibrationPattern(new long[]{0, 500}); // 진동없애는거? 삭제하고 다시 깔아야 적용.
             channel.enableVibration(true);
+
             notificationManager.createNotificationChannel(channel);
 
         }

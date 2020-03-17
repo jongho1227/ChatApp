@@ -18,22 +18,37 @@ import java.util.List;
 public class UserMap {
     private static HashMap<String, User> userMap;
     private static List<User> userList;
+    private static List<ChatModel.Comment> newComments;
 
-    public static HashMap<String, User> getInstance(){
-        if(userMap==null){
+    public static void clearComments() {
+        if (newComments != null) {
+            newComments.clear();
+        }
+    }
+
+    public static List<ChatModel.Comment> getComments() {
+        return newComments;
+    }
+
+    public static void setComments(List<ChatModel.Comment> comments) {
+        newComments = comments;
+    }
+
+    public static HashMap<String, User> getInstance() {
+        if (userMap == null) {
             userMap = new HashMap<>();
         }
         return userMap;
     }
 
-    public static List<User> getUser(){
-        if(userList==null){
+    public static List<User> getUser() {
+        if (userList == null) {
             userList = new ArrayList<>();
         }
         return userList;
     }
 
-    public static void getUserMap(){
+    public static void getUserMap() {
         FirebaseDatabase.getInstance().getReference().child("Users").addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
@@ -65,7 +80,7 @@ public class UserMap {
         });
     }
 
-    public static void getUserList(){
+    public static void getUserList() {
         FirebaseDatabase.getInstance().getReference().child("Users").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -84,6 +99,7 @@ public class UserMap {
                 userList.add(0, user);
 
             }
+
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
             }
