@@ -105,6 +105,7 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
         img.setOnClickListener(this);
         plus.setOnClickListener(this);
         out.setOnClickListener(this);
+        plus.setText("대화멤버 "+userList.size());
     }
 
     @Override
@@ -207,7 +208,6 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                                             }
 
                                             map.put("comments/" + i.getKey() + "/existUser/" + uid, null);
-                                            map.put("comments/" + i.getKey() + "/readUsers/" + uid, null);
                                         }
 
                                         map.put("users/" + uid, null);

@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public class VoteActivity extends AppCompatActivity {
     private DatabaseReference databaseReference;
@@ -72,7 +73,8 @@ public class VoteActivity extends AppCompatActivity {
                 LinearLayout vote_layout = findViewById(R.id.toggle_group);
                 final LayoutInflater layoutInflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 
-                Map<String, Object> read = vote.getContent();
+                Map<String, Object> get = vote.getContent();
+                TreeMap<String, Object> read = new TreeMap<>(get);
                 Set<String> keys = read.keySet();
                 Iterator<String> it = keys.iterator();
 
@@ -85,7 +87,7 @@ public class VoteActivity extends AppCompatActivity {
                 while (it.hasNext()) {
                     int count = 0;
                     final String key = it.next();
-
+                    Log.d("항목", key);
                     update.put(key+"/"+uid, false);
                     Map<String, Object> map2 = (Map<String, Object>) read.get(key);
                     Set<String> keys2 = map2.keySet();
@@ -103,9 +105,9 @@ public class VoteActivity extends AppCompatActivity {
                     }
                     detailUser.put(key, user);
                     final ToggleButton btn = (ToggleButton) layoutInflater.inflate(R.layout.toggle_vote, vote_layout, false);
-                    btn.setText(key+"("+count+"명)");
-                    btn.setTextOff(key+"("+count+"명)");
-                    btn.setTextOn(key+"("+count+"명)");
+                    btn.setText(key.substring(1)+"("+count+"명)");
+                    btn.setTextOff(key.substring(1)+"("+count+"명)");
+                    btn.setTextOn(key.substring(1)+"("+count+"명)");
                     btn.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {

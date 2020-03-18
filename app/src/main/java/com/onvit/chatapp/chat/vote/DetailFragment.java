@@ -47,7 +47,7 @@ public class DetailFragment extends Fragment {
         while (its.hasNext()) {
             Vote v = new Vote();
             String k = its.next();
-            v.setTitle(k);
+            v.setTitle(k.substring(1));
             v.setList(user.get(k));
             voteList.add(v);
         }

@@ -1,11 +1,5 @@
 package com.onvit.chatapp.chat.vote;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
@@ -20,6 +14,12 @@ import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DataSnapshot;
@@ -30,6 +30,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.User;
+import com.onvit.chatapp.model.UserMap;
 import com.onvit.chatapp.model.Vote;
 import com.onvit.chatapp.util.PreferenceManager;
 import com.onvit.chatapp.util.Utiles;
@@ -47,6 +48,10 @@ import java.util.Map;
 import java.util.Set;
 
 public class VoteRegistrationActivity extends AppCompatActivity {
+    Map<String, Object> messageReadUsers = new HashMap<>();
+    Map<String, Object> existUserGroupChat = new HashMap<>();
+    SimpleDateFormat sd = new SimpleDateFormat("yyyy년 MM월 dd일");
+    ArrayList<User> userList2;
     private Toolbar toolbar;
     private RadioGroup radioGroup;
     private RadioButton radio_text, radio_date;
@@ -56,13 +61,9 @@ public class VoteRegistrationActivity extends AppCompatActivity {
     private String date, toRoom, uid;
     private ValueEventListener accessChatMemberEventListener;
     private DatabaseReference databaseReference;
-    Map<String, Object> messageReadUsers = new HashMap<>();
-    Map<String, Object> existUserGroupChat = new HashMap<>();
     private List<String> registration_ids;
     private Map<String, Object> userList;
-    SimpleDateFormat sd = new SimpleDateFormat("yyyy년 MM월 dd일");
-    ArrayList<User> userList2;
-
+    private Map<String, User> users = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,14 +78,14 @@ public class VoteRegistrationActivity extends AppCompatActivity {
         toRoom = getIntent().getStringExtra("room");
         if (toRoom.equals("normalChat")) {
             chatName = "회원채팅방 투표등록";
-        } else if (toRoom.equals("officerChat")){
+        } else if (toRoom.equals("officerChat")) {
             chatName = "임원채팅방 투표등록";
-        } else{
-            chatName = toRoom +"투표등록";
+        } else {
+            chatName = toRoom + "투표등록";
         }
         actionBar.setTitle(chatName);
         actionBar.setDisplayHomeAsUpEnabled(true);
-
+        users = UserMap.getInstance();
         userList2 = getIntent().getParcelableArrayListExtra("userList");
         userList = new HashMap<>();
         registration_ids = new ArrayList<>();
@@ -108,11 +109,11 @@ public class VoteRegistrationActivity extends AppCompatActivity {
         radioGroup.setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(RadioGroup radioGroup, int i) {
-                if(i==R.id.radio_text){
+                if (i == R.id.radio_text) {
                     removeView(date_layout, i);
                     text_layout.setVisibility(View.VISIBLE);
                     date_layout.setVisibility(View.GONE);
-                }else if(i==R.id.radio_date){
+                } else if (i == R.id.radio_date) {
                     removeView(text_layout, i);
                     text_layout.setVisibility(View.GONE);
                     date_layout.setVisibility(View.VISIBLE);
@@ -125,10 +126,10 @@ public class VoteRegistrationActivity extends AppCompatActivity {
         plus.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(radio_text.isChecked()){
+                if (radio_text.isChecked()) {
                     EditText editText = (EditText) layoutInflater.inflate(R.layout.radio_text, text_layout, false);
                     text_layout.addView(editText);
-                }else if(radio_date.isChecked()){
+                } else if (radio_date.isChecked()) {
                     final TextView textView = (TextView) layoutInflater.inflate(R.layout.radio_date, date_layout, false);
                     textView.setOnClickListener(new View.OnClickListener() {
                         @Override
@@ -152,7 +153,7 @@ public class VoteRegistrationActivity extends AppCompatActivity {
 
         //날짜선택 달력나오는거.
         int count = date_layout.getChildCount();
-        for(int a=0; a<count; a++){
+        for (int a = 0; a < count; a++) {
             final TextView content = (TextView) date_layout.getChildAt(a);
             content.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -162,13 +163,8 @@ public class VoteRegistrationActivity extends AppCompatActivity {
             });
         }
 
-        for(User u : userList2){
+        for (User u : userList2) {
             userList.put(u.getUid(), false);
-            if(u.getUid().equals(uid)){
-                continue;
-            }
-            registration_ids.add(u.getPushToken());
-
         }
 
         //투표등록하기
@@ -186,12 +182,12 @@ public class VoteRegistrationActivity extends AppCompatActivity {
 
                         final String title = vote_title.getText().toString();
 
-                        if(title.trim().equals("")){
+                        if (title.trim().equals("")) {
                             a.dismiss();
                             Toast.makeText(VoteRegistrationActivity.this, "제목을 입력하여 주세요.", Toast.LENGTH_SHORT).show();
                             return;
                         }
-                        if(deadline.getText().toString().trim().equals("")){
+                        if (deadline.getText().toString().trim().equals("")) {
                             a.dismiss();
                             Toast.makeText(VoteRegistrationActivity.this, "마감시간을 정해주세요.", Toast.LENGTH_SHORT).show();
                             return;
@@ -204,7 +200,7 @@ public class VoteRegistrationActivity extends AppCompatActivity {
                         String endDay = sd.format(d1);
 
 
-                        if(today.equals(endDay) || endDayTime-todayTime<0){
+                        if (today.equals(endDay) || endDayTime - todayTime < 0) {
                             a.dismiss();
                             Toast.makeText(VoteRegistrationActivity.this, "마감시간은 오늘 이전으로 할 수 없습니다.", Toast.LENGTH_SHORT).show();
                             return;
@@ -213,29 +209,29 @@ public class VoteRegistrationActivity extends AppCompatActivity {
                         vote.setTitle(title); //투표제목
                         vote.setDeadline((Long) deadline.getTag(R.id.deadline));//투표마감시간
                         Map<String, Object> listMap = new HashMap<>();
-                        if(radio_text.isChecked()){
+                        if (radio_text.isChecked()) {
                             vote.setType("텍스트");
-                            for(int j=0; j<text_layout.getChildCount(); j++){
+                            for (int j = 0; j < text_layout.getChildCount(); j++) {
                                 EditText content = (EditText) text_layout.getChildAt(j);
                                 String c = content.getText().toString();
-                                if(c.trim().equals("")){
+                                if (c.trim().equals("")) {
                                     continue;
                                 }
-                                listMap.put(c,userList);
+                                listMap.put("a" + c, userList);
                             }
 
-                        }else if(radio_date.isChecked()){
+                        } else if (radio_date.isChecked()) {
                             vote.setType("날짜");
-                            for(int j=0; j<date_layout.getChildCount(); j++){
+                            for (int j = 0; j < date_layout.getChildCount(); j++) {
                                 TextView content = (TextView) date_layout.getChildAt(j);
                                 String c = content.getText().toString();
-                                if(c.trim().equals("")){
+                                if (c.trim().equals("")) {
                                     continue;
                                 }
-                                listMap.put(c,userList);
+                                listMap.put(c, userList);
                             }
                         }
-                        if(listMap.size()==0){
+                        if (listMap.size() == 0) {
                             a.dismiss();
                             Toast.makeText(VoteRegistrationActivity.this, "하나이상의 항목을 등록하세요.", Toast.LENGTH_SHORT).show();
                             return;
@@ -256,7 +252,7 @@ public class VoteRegistrationActivity extends AppCompatActivity {
                                         }
                                         final ChatModel.Comment comment = new ChatModel.Comment();
                                         comment.uid = uid; // 채팅친사람
-                                        comment.message = title +"!@#!@#"+deadline.getTag(R.id.deadline); // 채팅친내용
+                                        comment.message = title + "!@#!@#" + deadline.getTag(R.id.deadline); // 채팅친내용
                                         comment.timestamp = new Date().getTime(); // 채팅친 시간
                                         comment.type = "vote"; // 채팅 친 종류
                                         comment.readUsers = messageReadUsers; // 읽은사람들
@@ -280,7 +276,7 @@ public class VoteRegistrationActivity extends AppCompatActivity {
                                                     }
                                                 }
                                                 Map<String, Object> lastMap = new HashMap<>();
-                                                lastMap.put("lastChat", "투표 : "+comment.message.split("!@#!@#")[0]);
+                                                lastMap.put("lastChat", "투표 : " + comment.message.split("!@#!@#")[0]);
                                                 lastMap.put("timestamp", comment.timestamp);
                                                 lastMap.put("users", unreadUser);
                                                 FirebaseDatabase.getInstance().getReference().child("lastChat").child(toRoom).updateChildren(lastMap); // 마지막 메세지 표시
@@ -291,10 +287,30 @@ public class VoteRegistrationActivity extends AppCompatActivity {
 
                                             }
                                         });
-
                                         a.dismiss();
                                         Toast.makeText(VoteRegistrationActivity.this, "투표를 등록하였습니다.", Toast.LENGTH_SHORT).show();
-                                        Utiles.sendFcm(registration_ids, "투표를 등록하였습니다.", VoteRegistrationActivity.this, toRoom);
+                                        databaseReference.child("groupChat").child(toRoom).child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+                                            @Override
+                                            public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
+                                                for (DataSnapshot item : dataSnapshot.getChildren()) {
+                                                    if (item.getValue().toString().equals("false") || !((Boolean) item.getValue())) {
+                                                        //fcm보내기
+                                                        if (users.get(item.getKey()).getPushToken() == null || users.get(item.getKey()).getPushToken().equals("null") || users.get(item.getKey()).getPushToken().equals("")) { // 토큰값 없는애들도 제외
+                                                            continue;
+                                                        }
+                                                        registration_ids.add(users.get(item.getKey()).getPushToken());
+
+
+                                                    }
+                                                }
+                                                Utiles.sendFcm(registration_ids, "투표를 등록하였습니다.", VoteRegistrationActivity.this, toRoom);
+                                            }
+
+                                            @Override
+                                            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                                            }
+                                        });
                                         finish();
                                         overridePendingTransition(R.anim.fromright, R.anim.toleft);//화면 사라지는 방향
                                     }
@@ -320,6 +336,7 @@ public class VoteRegistrationActivity extends AppCompatActivity {
         });
 
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -364,16 +381,16 @@ public class VoteRegistrationActivity extends AppCompatActivity {
         });
     }
 
-    private void removeView(LinearLayout layout, int flag){
+    private void removeView(LinearLayout layout, int flag) {
         int count = layout.getChildCount();
-        for(int a=0; a<count; a++){
-            if(a>2){
+        for (int a = 0; a < count; a++) {
+            if (a > 2) {
                 layout.removeViewAt(3);
-            }else{
-                if(flag==R.id.radio_text){
+            } else {
+                if (flag == R.id.radio_text) {
                     TextView content = (TextView) layout.getChildAt(a);
                     content.setText("");
-                }else if(flag == R.id.radio_date){
+                } else if (flag == R.id.radio_date) {
                     EditText content = (EditText) layout.getChildAt(a);
                     content.setText("");
 

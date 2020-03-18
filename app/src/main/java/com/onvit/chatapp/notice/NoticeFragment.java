@@ -70,9 +70,6 @@ public class NoticeFragment extends Fragment {
         firebaseDatabase = FirebaseDatabase.getInstance().getReference();
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        NotificationManagerCompat.from(activity).cancel("notice", 0);
-        NotificationManagerCompat.from(activity).cancel(2);
-
 
         recyclerView = view.findViewById(R.id.fragment_notice_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(inflater.getContext()));
@@ -99,12 +96,17 @@ public class NoticeFragment extends Fragment {
         };
 
         firebaseDatabase.child("Notice").addValueEventListener(valueEventListener);
-        firebaseDatabase.child("Users").addListenerForSingleValueEvent(new ValueEventListener() {
+        firebaseDatabase.child("Users").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                registration_ids.clear();
                 for (DataSnapshot item : dataSnapshot.getChildren()) {
                     User user = item.getValue(User.class);
                     if (user.getUid().equals(uid)) {
+                        Log.d("내uid", "dd");
+                        continue;
+                    }
+                    if(user.getPushToken().equals("")){
                         continue;
                     }
                     registration_ids.add(user.getPushToken());
@@ -125,6 +127,9 @@ public class NoticeFragment extends Fragment {
                 Intent intent = new Intent(getActivity(), NoticeActivity.class);
                 intent.putExtra("insert", "insert");
                 intent.putStringArrayListExtra("userList", registration_ids);
+                for(String d : registration_ids){
+                    Log.d("내uid", d);
+                }
                 ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(view.getContext(), R.anim.frombottom, R.anim.totop);
                 startActivity(intent, activityOptions.toBundle());
             }
@@ -133,6 +138,12 @@ public class NoticeFragment extends Fragment {
         return view;
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        NotificationManagerCompat.from(activity).cancel("notice", 0);
+        NotificationManagerCompat.from(activity).cancel(2);
+    }
 
     class NoticeFragmentRecyclerAdapter extends RecyclerView.Adapter<NoticeFragmentRecyclerAdapter.NoticeViewHolder> {
         List<Notice> noticeList;

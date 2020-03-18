@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-    <ToggleButton
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@drawable/edit_border"
-        android:checked="false"
-        android:textOff=""
-        android:text=""
-        android:padding="10dp"
-        android:layout_marginBottom="5dp" />
+<ToggleButton xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="5dp"
+    android:background="@drawable/edit_border"
+    android:checked="false"
+    android:padding="10dp"
+    android:text=""
+    android:textAllCaps="false"
+    android:textOff="" />
