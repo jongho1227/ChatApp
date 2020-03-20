@@ -38,9 +38,12 @@ import com.onvit.chatapp.chat.vote.VoteListActivity;
 import com.onvit.chatapp.contact.PersonInfoActivity;
 import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.User;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.model.Vote;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -56,6 +59,9 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
     private String toRoom;
     private List<String> deleteKey = new ArrayList<>();
     private List<String> deleteKey2 = new ArrayList<>();
+    private Map<String, Object> messageReadUsers = new HashMap<>();
+    private Map<String, Object> existUserGroupChat = new HashMap<>();
+    private Map<String, User> users = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,8 +78,9 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
         img = findViewById(R.id.img);
         out = findViewById(R.id.out);
         userList = getIntent().getParcelableArrayListExtra("userInfo");
-        Log.d("유저정보", userList.toString());
-
+        messageReadUsers = (Map<String, Object>) getIntent().getSerializableExtra("readUser");
+        existUserGroupChat = (Map<String, Object>) getIntent().getSerializableExtra("existUser");
+        users = UserMap.getInstance();
         WindowManager.LayoutParams wmlp = getWindow().getAttributes();
         wmlp.gravity = Gravity.TOP | Gravity.END;
 
@@ -167,6 +174,9 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                 intent.putExtra("room", getIntent().getStringExtra("room"));
                 intent.putParcelableArrayListExtra("userlist", userList);
                 intent.putExtra("plus", "plus");
+                intent.putExtra("readUser", (Serializable) messageReadUsers);
+                intent.putExtra("existUser", (Serializable) existUserGroupChat);
+                intent.putExtra("room", toRoom);
                 getIntent().putExtra("on", "on");
                 startActivity(intent);
                 finish();
@@ -247,9 +257,7 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                                                             @Override
                                                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                                                                 ChatModel chatModel = dataSnapshot.getValue(ChatModel.class);
-                                                                Log.d("없앰", chatModel.toString());
                                                                 if (chatModel.users == null || chatModel.users.size() == 0) {
-                                                                    Log.d("없앰", "들어옴");
                                                                     FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).setValue(null);
                                                                     FirebaseDatabase.getInstance().getReference().child("lastChat").child(toRoom).setValue(null);
                                                                     for (String d : deleteKey) {
@@ -259,6 +267,17 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                                                                         FirebaseStorage.getInstance().getReference().child("Document Files").child(toRoom).child(d).delete();
                                                                     }
                                                                     FirebaseDatabase.getInstance().getReference().child("Vote").child(toRoom).setValue(null);
+                                                                }else{
+                                                                    ChatModel.Comment comment = new ChatModel.Comment();
+                                                                    messageReadUsers.remove(uid);
+                                                                    existUserGroupChat.remove(uid);
+                                                                    comment.uid = uid;
+                                                                    comment.message = String.format("%s(%s)님이 나갔습니다.",users.get(uid).getUserName(),users.get(uid).getHospital());
+                                                                    comment.timestamp = new Date().getTime();
+                                                                    comment.type = "io";
+                                                                    comment.readUsers = messageReadUsers;
+                                                                    comment.existUser = existUserGroupChat;
+                                                                    FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("comments").push().setValue(comment);
                                                                 }
                                                                 GroupMessageActivity g = (GroupMessageActivity) GroupMessageActivity.message;
                                                                 g.getIntent().putExtra("on", "on");

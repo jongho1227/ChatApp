@@ -81,7 +81,7 @@ import com.onvit.chatapp.contact.PersonInfoActivity;
 import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.Img;
 import com.onvit.chatapp.model.User;
-import com.onvit.chatapp.model.UserMap;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 import com.vlk.multimager.activities.GalleryActivity;
 import com.vlk.multimager.utils.Constants;
@@ -100,6 +100,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -287,6 +288,8 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                         intent.putParcelableArrayListExtra("userInfo", userInfoList);
                         intent.putParcelableArrayListExtra("imglist", (ArrayList<? extends Parcelable>) img_list);
+                        intent.putExtra("readUser", (Serializable) messageReadUsers);
+                        intent.putExtra("existUser", (Serializable) existUserGroupChat);
                         intent.putExtra("room", toRoom);
                         getIntent().putExtra("on", "on");
                         overridePendingTransition(R.anim.fromright, R.anim.toleft);
@@ -1284,6 +1287,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
         @Override
         public void onBindViewHolder(@NonNull GroupMessageRecyclerViewAdapter.groupViewHolder holder, int position) {
             holder.linearLayout_change_date.setVisibility(View.GONE);
+            holder.linear_layout_main.setVisibility(View.VISIBLE);
             //채팅 안읽은 숫자 표시
             holder.textView_readCounter_left.setVisibility(View.INVISIBLE);
             holder.textView_readCounter_right.setVisibility(View.INVISIBLE);
@@ -1312,7 +1316,6 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
 
             //초대 및 나가기 표시
             holder.linearLayout_invte.setVisibility(View.GONE);
-            Map<String, Object> curMember;
 
             //메세지 보낸 시간.
             long unixTime = (long) newComments.get(position).timestamp;
@@ -1339,59 +1342,12 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     holder.linearLayout_change_date.setVisibility(View.VISIBLE);
                     holder.messageItem_change_date_textView.setText(nowChatTime);
                 }
-
-                //초대 및 나가기 표시
-                Map<String, Object> preMember = new HashMap<>(newComments.get(position - 1).readUsers);
-                curMember = new HashMap<>(newComments.get(position).readUsers);
-                String invite = "";
-                if(newComments.get(position-1).readUsers.size()<newComments.get(position).readUsers.size()){
-                    Set<String> keys = preMember.keySet();
-                    for (String key1 : keys) {
-                        curMember.remove(key1);
-                    }
-                    Set<String> keys2 = curMember.keySet();
-                    for (String key : keys2) {
-                        try{
-                            invite = invite + String.format("%s(%s)님,",users.get(key).getUserName(),users.get(key).getHospital());
-                        }catch (Exception e){
-                            Log.d("에러", key);
-                        }
-                    }
-                    invite = invite.substring(0, invite.length()-1)+"이 채팅방에 참여하였습니다.";
-                    holder.textView_invite.setText(invite);
-                    holder.linearLayout_invte.setVisibility(View.VISIBLE);
-                }else if(newComments.get(position-1).readUsers.size()>newComments.get(position).readUsers.size()){
-                    Set<String> keys2 = curMember.keySet();
-                    for (String key1 : keys2) {
-                        preMember.remove(key1);
-                    }
-                    Set<String> keys = preMember.keySet();
-                    for (String key : keys) {
-                        invite = invite + String.format("%s(%s)님,",users.get(key).getUserName(),users.get(key).getHospital());
-                    }
-                    invite = invite.substring(0, invite.length()-1)+"이 나갔습니다.";
-                    holder.textView_invite.setText(invite);
-                    holder.linearLayout_invte.setVisibility(View.VISIBLE);
-                }
             } else {
                 long nowTime = (long) newComments.get(position).timestamp;
                 Date nowDateTime = new Date(nowTime);
                 String nowChatTime = changeDateFormat.format(nowDateTime);
                 holder.linearLayout_change_date.setVisibility(View.VISIBLE);
                 holder.messageItem_change_date_textView.setText(nowChatTime);
-                String invite = "";
-                curMember = newComments.get(position).readUsers;
-                Set<String> keys2 = curMember.keySet();
-                if(curMember.size()>1){
-                    for (String key : keys2) {
-                        invite = String.format("%s(%s)님 외%d명이 채팅방에 참여하였습니다.",users.get(key).getUserName(),users.get(key).getHospital(),curMember.size()-1);
-                        break;
-                    }
-                }else{
-                    invite = String.format("%s(%s)님이 채팅방에 참여하였습니다.",users.get(uid).getUserName(),users.get(uid).getHospital());
-                }
-                holder.textView_invite.setText(invite);
-                holder.linearLayout_invte.setVisibility(View.VISIBLE);
             }
 
             //내가보낸메세지
@@ -1418,45 +1374,47 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     case "vote":
                         getVote(holder, position);
                         break;
+                    case "io":
+                        holder.linear_layout_main.setVisibility(View.GONE);
+                        invite(holder,position);
+                        break;
                     default:
                         drawThumbNail(holder, position, metrics);
                         break;
                 }
-
-                holder.linearLayout_to.setVisibility(View.INVISIBLE);
-                //메세지 레이아웃 오른쪽으로
-                holder.linear_layout_main.setGravity(Gravity.END);
-                //안읽은 사람 몇명인지 처리
-                setReadCounter(position, holder.textView_readCounter_left);
-                holder.linearLayout_my.setVisibility(View.VISIBLE);
-                holder.textView_my_timestamp.setText(time);
+                if(!newComments.get(position).type.equals("io")){
+                    holder.linearLayout_to.setVisibility(View.INVISIBLE);
+                    //메세지 레이아웃 오른쪽으로
+                    holder.linear_layout_main.setGravity(Gravity.END);
+                    //안읽은 사람 몇명인지 처리
+                    setReadCounter(position, holder.textView_readCounter_left);
+                    holder.linearLayout_my.setVisibility(View.VISIBLE);
+                    holder.textView_my_timestamp.setText(time);
+                }
                 //상대방이보낸메세지
             } else {
-
                 if (position > 0) {
-                    if(newComments.get(position-1).existUser.size()<newComments.get(position).existUser.size()
-                            || newComments.get(position-1).existUser.size()>newComments.get(position).existUser.size()){
-                        yourProfileImage(holder, position);
-                    }else{
-                        long preTime = (long) newComments.get(position - 1).timestamp;
-                        long nowTime = (long) newComments.get(position).timestamp;
-                        Date preDateTime = new Date(preTime);
-                        Date nowDateTime = new Date(nowTime);
-                        chatDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
-                        String preChatTime = chatDateFormat.format(preDateTime);
-                        String nowChatTime = chatDateFormat.format(nowDateTime);
-                        //전에 채팅이랑 동일한 사람인데
-                        if (newComments.get(position - 1).uid.equals(newComments.get(position).uid)) {
-                            //보낸시간이 같으면~
-                            if (nowChatTime.equals(preChatTime)) {
-                                holder.linearLayout_to.setVisibility(View.INVISIBLE);
-                                holder.textView_name.setVisibility(View.GONE);
-                            } else {//보낸시간은 다름
+                    long preTime = (long) newComments.get(position - 1).timestamp;
+                    long nowTime = (long) newComments.get(position).timestamp;
+                    Date preDateTime = new Date(preTime);
+                    Date nowDateTime = new Date(nowTime);
+                    chatDateFormat.setTimeZone(TimeZone.getTimeZone("Asia/Seoul"));
+                    String preChatTime = chatDateFormat.format(preDateTime);
+                    String nowChatTime = chatDateFormat.format(nowDateTime);
+                    //전에 채팅이랑 동일한 사람인데
+                    if (newComments.get(position - 1).uid.equals(newComments.get(position).uid)) {
+                        //보낸시간이 같으면~
+                        if (nowChatTime.equals(preChatTime)) {
+                            holder.linearLayout_to.setVisibility(View.INVISIBLE);
+                            holder.textView_name.setVisibility(View.GONE);
+                            if(newComments.get(position - 1).type.equals("io")){
                                 yourProfileImage(holder, position);
                             }
-                        } else {//다른사람
+                        } else {//보낸시간은 다름
                             yourProfileImage(holder, position);
                         }
+                    } else {//다른사람
+                        yourProfileImage(holder, position);
                     }
                 } else {
                     //상대방 사진 표시
@@ -1481,15 +1439,26 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                     case "vote":
                         getVote(holder, position);
                         break;
+                    case "io":
+                        holder.linear_layout_main.setVisibility(View.GONE);
+                        invite(holder,position);
+                        break;
                     default:
                         drawThumbNail(holder, position, metrics);
                         break;
                 }
-                holder.linear_layout_main.setGravity(Gravity.START);
-                setReadCounter(position, holder.textView_readCounter_right);
-                holder.linearLayout_other.setVisibility(View.VISIBLE);
-                holder.textView_other_timestamp.setText(time);
+                if(!newComments.get(position).type.equals("io")){
+                    holder.linear_layout_main.setGravity(Gravity.START);
+                    setReadCounter(position, holder.textView_readCounter_right);
+                    holder.linearLayout_other.setVisibility(View.VISIBLE);
+                    holder.textView_other_timestamp.setText(time);
+                }
             }
+        }
+
+        private void invite(groupViewHolder holder, int position) {
+            holder.linearLayout_invte.setVisibility(View.VISIBLE);
+            holder.textView_invite.setText(newComments.get(position).message);
         }
 
         private void getVote(groupViewHolder holder, final int position) {

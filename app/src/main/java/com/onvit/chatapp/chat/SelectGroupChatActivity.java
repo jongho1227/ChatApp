@@ -35,7 +35,7 @@ import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.Img;
 import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.model.User;
-import com.onvit.chatapp.model.UserMap;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 
 import java.text.SimpleDateFormat;
@@ -56,10 +56,7 @@ public class SelectGroupChatActivity extends AppCompatActivity {
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM월dd일", Locale.KOREA);
     private SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm", Locale.KOREA);
     private ValueEventListener valueEventListener;
-    private List<String> userCount = new ArrayList<>();
     private List<LastChat> chatModels = new ArrayList<>();
-    private List<String> keys = new ArrayList<>();
-    private List<String> count = new ArrayList<>();
     private String uid;
     private String text = null;
     private Uri uri = null;
@@ -138,27 +135,12 @@ public class SelectGroupChatActivity extends AppCompatActivity {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) { // 해당되는 chatrooms들의 키값들이 넘어옴.
                     chatModels.clear();
-                    count.clear();
-                    keys.clear();
-                    userCount.clear();
-//                    Log.d("등급11", grade);
                     for (final DataSnapshot item : dataSnapshot.getChildren()) {// normalChat, officerChat
                         final LastChat lastChat = item.getValue(LastChat.class);
                         chatModels.add(lastChat);// 채팅방 밖에 표시할 내용들.
 
                     }
                     Collections.sort(chatModels);
-                    for (int i = 0; i < chatModels.size(); i++) {
-                        String chatName = chatModels.get(i).getChatName();
-                        if (chatName.equals("회원채팅방")) {
-                            chatName = "normalChat";
-                        } else if (chatName.equals("임원채팅방")) {
-                            chatName = "officerChat";
-                        }
-                        keys.add(chatName);
-                        count.add(chatModels.get(i).getUsers().get(uid) + "");
-                        userCount.add(chatModels.get(i).getExistUsers().size() + "");
-                    }
                     notifyDataSetChanged();
                 }
 
@@ -189,7 +171,7 @@ public class SelectGroupChatActivity extends AppCompatActivity {
 
             holder.textView_title.setText(chatModels.get(position).getChatName());
 
-            holder.textView_user_count.setText(userCount.get(position));
+            holder.textView_user_count.setText(chatModels.get(position).getExistUsers().size()+"");
             //마지막으로 보낸 메세지
 
             String lastChat = chatModels.get(position).getLastChat();
@@ -226,8 +208,8 @@ public class SelectGroupChatActivity extends AppCompatActivity {
             }
 
             //안읽은 메세지 숫자
-            if (!count.get(position).equals("0") && !count.get(position).equals("null")) {
-                holder.textView_count.setText(count.get(position));
+            if (chatModels.get(position).getUsers().get(uid)!=0) {
+                holder.textView_count.setText(chatModels.get(position).getUsers().get(uid)+"");
                 holder.textView_count.setVisibility(View.VISIBLE);
             }
 
@@ -243,7 +225,7 @@ public class SelectGroupChatActivity extends AppCompatActivity {
                         dialog.setCancelable(false);
                         dialog.show();
                         UserMap.clearComments();
-                        new getMessage().execute(keys.get(position));
+                        new getMessage().execute(chatModels.get(position).getChatName());
                     }
                 }
             });

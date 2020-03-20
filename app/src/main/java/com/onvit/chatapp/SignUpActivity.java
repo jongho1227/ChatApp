@@ -11,6 +11,7 @@ import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -42,6 +43,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.Notice;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.PreferenceManager;
@@ -49,6 +51,7 @@ import com.onvit.chatapp.util.PreferenceManager;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -73,6 +76,11 @@ public class SignUpActivity extends AppCompatActivity {
     private Uri imageUri;
     private User user;
     private String filePath;
+
+    private Map<String, Object> normalReadUser = new HashMap<>();
+    private Map<String, Object> normalExistUser = new HashMap<>();
+    private Map<String, Object> officerReadUser = new HashMap<>();
+    private Map<String, Object> officerExistUser = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,7 +125,7 @@ public class SignUpActivity extends AppCompatActivity {
         if (getIntent().getParcelableExtra("modify") == null) {
             final User joinUser = getIntent().getParcelableExtra("user");
             grade.setText(joinUser.getGrade());
-            name.setText(joinUser.getUserName().trim());
+            name.setText(joinUser.getUserName());
             tel.setText(joinUser.getTel());
             email.setText(joinUser.getUserEmail());
             hospital.setText(joinUser.getHospital());
@@ -130,6 +138,40 @@ public class SignUpActivity extends AppCompatActivity {
             hospital.setFocusable(false);
             hospital.setClickable(false);
             signup.setText("회원가입");
+            FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    normalExistUser.clear();
+                    normalReadUser.clear();
+                    for (DataSnapshot item : dataSnapshot.getChildren()) {
+                        normalReadUser.put(item.getKey(), true);
+                        normalExistUser.put(item.getKey(), true);
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+            if (joinUser.getGrade().equals("임원")) {
+                FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("users").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        officerExistUser.clear();
+                        officerReadUser.clear();
+                        for (DataSnapshot item : dataSnapshot.getChildren()) {
+                            officerReadUser.put(item.getKey(), true);
+                            officerExistUser.put(item.getKey(), true);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                    }
+                });
+            }
             password.setOnEditorActionListener(new TextView.OnEditorActionListener() { // 완료눌러도 회원가입기능되게~
                 @Override
                 public boolean onEditorAction(TextView textView, int i, KeyEvent keyEvent) {
@@ -327,6 +369,7 @@ public class SignUpActivity extends AppCompatActivity {
                         if (imageUri != null) {
                             Bitmap bitmap = resize(SignUpActivity.this, imageUri, 500);
                             ExifInterface exif = null;
+                            Log.d("이미지파일", filePath);
                             try {
                                 exif = new ExifInterface(filePath);
                             } catch (IOException e) {
@@ -375,11 +418,24 @@ public class SignUpActivity extends AppCompatActivity {
                                 PreferenceManager.setString(SignUpActivity.this, "phone", user.getTel());
                                 PreferenceManager.setString(SignUpActivity.this, "uid", user.getUid());
 //                                PreferenceManager.setString(SignUpActivity.this, "grade", user.getGrade());
-
+                                ChatModel.Comment normalComment = new ChatModel.Comment();
+                                normalComment.uid = uid;
+                                normalComment.message = String.format("%s(%s)님이 채팅방에 참여하였습니다.", user.getUserName(), user.getHospital());
+                                normalComment.timestamp = new Date().getTime();
+                                normalComment.type = "io";
+                                normalComment.readUsers = normalReadUser;
+                                normalComment.existUser = normalExistUser;
                                 Map<String, Object> map = new HashMap<>();
                                 Map<String, Object> map2 = new HashMap<>();
                                 //각각의 그룹채팅방에 유저 정보 / 접속여부를 넣음
                                 if (user.getGrade().equals("임원")) {
+                                    ChatModel.Comment officerComment = new ChatModel.Comment();
+                                    officerComment.uid = uid;
+                                    officerComment.message = String.format("%s(%s)님이 채팅방에 참여하였습니다.", user.getUserName(), user.getHospital());
+                                    officerComment.timestamp = new Date().getTime();
+                                    officerComment.type = "io";
+                                    officerComment.readUsers = normalReadUser;
+                                    officerComment.existUser = normalExistUser;
                                     map.put("normalChat/users/" + uid, false);
                                     map.put("officerChat/users/" + uid, false);
                                     map2.put("normalChat/chatName", "회원채팅방");
@@ -388,15 +444,16 @@ public class SignUpActivity extends AppCompatActivity {
                                     map2.put("officerChat/users/" + uid, 0);
                                     map2.put("normalChat/existUsers/" + uid, true);
                                     map2.put("officerChat/existUsers/" + uid, true);
+                                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("comments").push().setValue(normalComment);
+                                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("officerChat").child("comments").push().setValue(officerComment);
                                 } else {
                                     map.put("normalChat/users/" + uid, false);
                                     map2.put("normalChat/chatName", "회원채팅방");
                                     map2.put("normalChat/users/" + uid, 0);
                                     map2.put("normalChat/existUsers/" + uid, true);
+                                    FirebaseDatabase.getInstance().getReference().child("groupChat").child("normalChat").child("comments").push().setValue(normalComment);
                                 }
-
                                 FirebaseDatabase.getInstance().getReference().child("groupChat").updateChildren(map);
-
                                 //lastChat방에 uid와 안읽은 메세지수 0으로 집어넣음.
                                 FirebaseDatabase.getInstance().getReference().child("lastChat").updateChildren(map2);
                                 dialog.dismiss();
@@ -492,16 +549,17 @@ public class SignUpActivity extends AppCompatActivity {
 
             int width = options.outWidth;
             int height = options.outHeight;
+            Log.d("사진크기", "width=" + width + "/height=" + height);
             int samplesize = 1;
 
             while (true) {//2번
-                if (width / 2 < resize || height / 2 < resize)
+                if (width / 2 < resize && height / 2 < resize)
                     break;
                 width /= 2;
                 height /= 2;
                 samplesize *= 2;
             }
-
+            Log.d("사진크기", "width=" + width + "/height=" + height + "/samplesize=" + samplesize);
 
             options.inSampleSize = samplesize;
             Bitmap bitmap = BitmapFactory.decodeStream(context.getContentResolver().openInputStream(uri), null, options); //3번
@@ -519,6 +577,7 @@ public class SignUpActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_CODE && resultCode == RESULT_OK && data != null) {
             imageUri = data.getData();//이미지 경로 원본
+            Log.d("이미지 경로", imageUri.toString());
             profileImageView.setImageURI(imageUri);
             filePath = getRealPathFromURI(imageUri);
             if (filePath == null) {

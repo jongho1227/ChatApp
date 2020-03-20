@@ -6,7 +6,6 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -25,6 +24,7 @@ import com.onvit.chatapp.LoginActivity;
 import com.onvit.chatapp.MainActivity;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.User;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.PreferenceManager;
 
 import java.util.HashMap;
@@ -53,14 +53,6 @@ public class SetupFragment extends Fragment implements View.OnClickListener {
         TextView admin = view.findViewById(R.id.admin);
         final Switch notify = view.findViewById(R.id.notify);
         TextView invite = view.findViewById(R.id.invite);
-        LinearLayout adminLayout = view.findViewById(R.id.layout_admin);
-        LinearLayout inviteLayout = view.findViewById(R.id.layout_invite);
-        if (user.getHospital().equals("개발자")) {
-            adminLayout.setVisibility(View.VISIBLE);
-        }
-        if (user.getHospital().equals("개발자")) {
-            inviteLayout.setVisibility(View.VISIBLE);
-        }
 
         logout.setOnClickListener(this);
         admin.setOnClickListener(this);
@@ -102,6 +94,7 @@ public class SetupFragment extends Fragment implements View.OnClickListener {
                 map.put("pushToken", "");
                 FirebaseDatabase.getInstance().getReference().child("Users").child(uid).updateChildren(map);
                 NotificationManagerCompat.from(getActivity()).cancelAll();
+                UserMap.clearApp();
                 intent = new Intent(activity, LoginActivity.class);
                 intent.putExtra("logOut", "logOut");
                 PreferenceManager.clear(activity);

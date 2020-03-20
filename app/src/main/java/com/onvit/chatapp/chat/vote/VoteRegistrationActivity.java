@@ -30,7 +30,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.User;
-import com.onvit.chatapp.model.UserMap;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.model.Vote;
 import com.onvit.chatapp.util.PreferenceManager;
 import com.onvit.chatapp.util.Utiles;

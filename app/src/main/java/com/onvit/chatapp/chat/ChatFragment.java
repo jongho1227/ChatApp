@@ -25,7 +25,6 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -39,10 +38,9 @@ import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.Img;
 import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.model.User;
-import com.onvit.chatapp.model.UserMap;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 
-import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -60,19 +58,16 @@ public class ChatFragment extends Fragment {
     private ChatRecyclerViewAdapter chatRecyclerViewAdapter;
     private AppCompatActivity activity;
     private Toolbar chatToolbar;
-    private ValueEventListener valueEventListener;
     private List<LastChat> chatModels = new ArrayList<>();
-    private List<String> keys = new ArrayList<>();
-    private List<String> count = new ArrayList<>();
     private String uid;// 클라이언트uid
     private ToggleButton btn;
-    private List<String> userCount = new ArrayList<>();
     private FloatingActionButton creatChat;
     private final int firstReadChatCount = Utiles.firstReadChatCount;
     private List<ChatModel.Comment> newComments = new ArrayList<>();
     private List<Img> img_list = new ArrayList<>();
     private AlertDialog dialog;
     private Map<String, User> users = new HashMap<>();
+    private ValueEventListener valueEventListener;
     public ChatFragment() {
     }
 
@@ -119,50 +114,17 @@ public class ChatFragment extends Fragment {
             btn.setBackgroundDrawable(getResources().getDrawable(R.drawable.ic_notifications_no_vibrate));
             btn.setChecked(false);
         }
-
-
-
-
         valueEventListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) { // 해당되는 chatrooms들의 키값들이 넘어옴.
                 chatModels.clear(); // 채팅방에 표현할 리스트.
-                count.clear(); // 안읽은 숫자
-                keys.clear(); // 채팅방이름
-                userCount.clear(); // 채팅방 사람수
-//                    Log.d("등급11", grade);
                 for (final DataSnapshot item : dataSnapshot.getChildren()) {// normalChat, officerChat
                     final LastChat lastChat = item.getValue(LastChat.class);
                     chatModels.add(lastChat);// 채팅방 밖에 표시할 내용들.
                 }
                 Collections.sort(chatModels);
-                for(int i=0; i<chatModels.size(); i++){
-                    String chatName = chatModels.get(i).getChatName();
-                    if(chatName.equals("회원채팅방")){
-                        chatName = "normalChat";
-                    }else if(chatName.equals("임원채팅방")){
-                        chatName = "officerChat";
-                    }
-                    keys.add(chatName);
-                    String c;
-                    if(chatModels.get(i).getUsers()==null){
-                        c="null";
-                    }else{
-                        c = chatModels.get(i).getUsers().get(uid)+"";
-                    }
-                    count.add(c);
-
-                    String b;
-                    if(chatModels.get(i).getExistUsers()==null){
-                        b = "0";
-                    }else{
-                        b = chatModels.get(i).getExistUsers().size()+"";
-                    }
-                    userCount.add(b);
-                }
                 chatRecyclerViewAdapter.notifyDataSetChanged();
             }
-
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
@@ -178,6 +140,13 @@ public class ChatFragment extends Fragment {
         return view;
     }
 
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (valueEventListener != null) {
+            databaseReference.child("lastChat").removeEventListener(valueEventListener); // 이벤트 제거.
+        }
+    }
 
     class ChatRecyclerViewAdapter extends RecyclerView.Adapter<ChatRecyclerViewAdapter.ChatViewHolder> {
         public ChatRecyclerViewAdapter() {
@@ -203,7 +172,7 @@ public class ChatFragment extends Fragment {
 
             holder.textView_title.setText(chatModels.get(position).getChatName());
 
-            holder.textView_user_count.setText(userCount.get(position));
+            holder.textView_user_count.setText(chatModels.get(position).getExistUsers().size()+"");
             //마지막으로 보낸 메세지
 
             String lastChat = chatModels.get(position).getLastChat();
@@ -240,8 +209,8 @@ public class ChatFragment extends Fragment {
             }
 
             //안읽은 메세지 숫자
-            if (!count.get(position).equals("0") && !count.get(position).equals("null")) {
-                holder.textView_count.setText(count.get(position));
+            if (chatModels.get(position).getUsers().get(uid)!=0) {
+                holder.textView_count.setText(chatModels.get(position).getUsers().get(uid)+"");
                 holder.textView_count.setVisibility(View.VISIBLE);
             }
 
@@ -258,8 +227,12 @@ public class ChatFragment extends Fragment {
                     dialog.setCanceledOnTouchOutside(false);
                     dialog.setCancelable(false);
                     dialog.show();
-
-                    new getMessage().execute(keys.get(position));
+                    if(chatModels.get(position).getChatName().equals("회원채팅방")){
+                        chatModels.get(position).setChatName("normalChat");
+                    }else if(chatModels.get(position).getChatName().equals("임원채팅방")){
+                        chatModels.get(position).setChatName("officerChat");
+                    }
+                    new getMessage().execute(chatModels.get(position).getChatName());
                 }
 
             });

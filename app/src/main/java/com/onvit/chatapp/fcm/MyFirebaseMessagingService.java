@@ -34,6 +34,7 @@ import me.leolin.shortcutbadger.ShortcutBadger;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
     private static final String TAG = "MyFirebaseMsgService";
+
     @Override
     public void onMessageReceived(final RemoteMessage remoteMessage) { // 알림 받는부분, 포그라운드꺼만 받음.
         if (remoteMessage.getData().size() > 0) {
@@ -44,7 +45,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         }
         sendNotification(remoteMessage);
         final String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        FirebaseDatabase.getInstance().getReference().child("lastChat").orderByChild("existUsers/" + uid).equalTo(true).addValueEventListener(new ValueEventListener() {
+        FirebaseDatabase.getInstance().getReference().child("lastChat").orderByChild("existUsers/" + uid).equalTo(true).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 int count = 0;
@@ -53,7 +54,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     count +=  chatList.getUsers().get(uid);
                 }
                 ShortcutBadger.applyCount(getApplicationContext(),count);
-
             }
 
             @Override
@@ -62,14 +62,17 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             }
         });
     }
+
     @Override
     public void onNewToken(String token) {
         Log.d(TAG, "Refreshed token: " + token);
         sendRegistrationToServer(token);
     }
+
     private void sendRegistrationToServer(String token) {
         // TODO: Implement this method to send token to your app server.
     }
+
     private void handleNow() {
         Log.d(TAG, "Short lived task is done.");
     }
@@ -77,16 +80,16 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
     private void sendNotification(final RemoteMessage remoteMessage) {
         final int[] id = new int[1];
         final String tag = remoteMessage.getData().get("tag");
-        if(tag.equals("normalChat")){
-            id[0] =0;
+        if (tag.equals("normalChat")) {
+            id[0] = 0;
             sendFcm(remoteMessage, id[0], tag);
-        }else if(tag.equals("officerChat")){
-            id[0] =1;
+        } else if (tag.equals("officerChat")) {
+            id[0] = 1;
             sendFcm(remoteMessage, id[0], tag);
-        }else if(tag.equals("notice")){
-            id[0] =2;
+        } else if (tag.equals("notice")) {
+            id[0] = 2;
             sendFcm(remoteMessage, id[0], tag);
-        }else{
+        } else {
             FirebaseDatabase.getInstance().getReference().child("groupChat").child(tag).child("id").addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -102,7 +105,6 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 }
             });
         }
-
     }
 
     private void sendFcm(RemoteMessage remoteMessage, int id, String tag) {
@@ -112,20 +114,17 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         AudioManager audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         NotificationManager notificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if(v==0){
+        if (v == 0) {
             channelId = getString(R.string.vibrate2);
-            //오레오버전 이하 진동 및 무음설정하는거.
-            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 audioManager.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
             }
-        }else{
+        } else {
             channelId = getString(R.string.noVibrate);
-            //오레오버전 이하 진동 및 무음설정하는거.
-            if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O){
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
                 audioManager.setRingerMode(AudioManager.RINGER_MODE_SILENT);
             }
         }
-
 
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra("tag", tag);
@@ -142,13 +141,11 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                 .setAutoCancel(true) // 누르면 알림 없어짐
                 .setSound(defaultSoundUri)
                 .setContentIntent(pendingIntent);
-
-        //오레오버전 이하 진동 및 무음설정하는거.
-        if(channelId.equals(getString(R.string.vibrate2))){
+        if (channelId.equals(getString(R.string.vibrate2))) {
             notificationBuilder.setPriority(NotificationCompat.PRIORITY_MAX)
                     .setDefaults(Notification.DEFAULT_VIBRATE);
         }
-        if(channelId.equals(getString(R.string.noVibrate))){
+        if (channelId.equals(getString(R.string.noVibrate))) {
             notificationBuilder.setPriority(NotificationCompat.PRIORITY_LOW);
         }
 

@@ -70,6 +70,8 @@ public class NoticeFragment extends Fragment {
         firebaseDatabase = FirebaseDatabase.getInstance().getReference();
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
+        Log.d("내uid", uid);
+
 
         recyclerView = view.findViewById(R.id.fragment_notice_recycler);
         recyclerView.setLayoutManager(new LinearLayoutManager(inflater.getContext()));
@@ -137,12 +139,19 @@ public class NoticeFragment extends Fragment {
 
         return view;
     }
-
     @Override
     public void onResume() {
         super.onResume();
         NotificationManagerCompat.from(activity).cancel("notice", 0);
         NotificationManagerCompat.from(activity).cancel(2);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if(valueEventListener!=null){
+            firebaseDatabase.child("Notice").removeEventListener(valueEventListener);
+        }
     }
 
     class NoticeFragmentRecyclerAdapter extends RecyclerView.Adapter<NoticeFragmentRecyclerAdapter.NoticeViewHolder> {

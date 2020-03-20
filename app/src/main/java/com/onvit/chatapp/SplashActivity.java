@@ -14,7 +14,6 @@ import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.WindowManager;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
@@ -31,7 +30,9 @@ import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig;
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings;
 import com.onvit.chatapp.model.User;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.PreferenceManager;
+import com.onvit.chatapp.util.Utiles;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -47,7 +48,7 @@ public class SplashActivity extends AppCompatActivity {
     private String text = null;
     private Uri uri = null;
     private String filePath;
-
+    private int i = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,32 +63,52 @@ public class SplashActivity extends AppCompatActivity {
                 .setMinimumFetchIntervalInSeconds(0) // 한시간에 최대 한번 요청할 수 있음. 한시간의 캐싱타임을 가짐.
                 .build();
         mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
-
         //다 메인으로 옮겨서 실행.
-
-        mFirebaseRemoteConfig.fetchAndActivate()
-                .addOnCompleteListener(this, new OnCompleteListener<Boolean>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Boolean> task) {
-                        if (task.isSuccessful()) {
-                            boolean updated = task.getResult();
-                            Log.d("원격", "Config params updated: " + updated);
-
-
-                        } else {
-                            Toast.makeText(SplashActivity.this, "Fetch failed",
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-
 
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        versionCheck();
+        accessFirebase();
+    }
+
+    private void accessFirebase() {
+        mFirebaseRemoteConfig.fetchAndActivate()
+                .addOnCompleteListener(this, new OnCompleteListener<Boolean>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Boolean> task) {
+                        if (task.isSuccessful()) {
+                            boolean updated = task.getResult();
+                            versionCheck();
+                            Log.d("원격", "Config params updated: " + updated);
+                        } else {
+                            AlertDialog d = Utiles.createLoadingDialog(SplashActivity.this,"서버에 연결중입니다.");
+                            i++;
+                            if(i==10){
+                                d.dismiss();
+                                AlertDialog.Builder builder = new AlertDialog.Builder(SplashActivity.this);
+                                builder.setMessage("현재 서버가 불안정합니다. 잠시후 다시 시도해 주세요.");
+                                builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        finish();
+                                    }
+                                });
+                                AlertDialog a = builder.create();
+                                a.setCancelable(false);
+                                a.setCanceledOnTouchOutside(false);
+                                a.show();
+                            }
+                            try {
+                                Thread.sleep(500);
+                                accessFirebase();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+                });
     }
 
     void versionCheck() {
@@ -170,7 +191,7 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void initSplash() {
-
+        UserMap.clearApp();
         if (PreferenceManager.getString(SplashActivity.this, "name") == null || PreferenceManager.getString(SplashActivity.this, "name").equals("")
                 || FirebaseAuth.getInstance().getCurrentUser() == null) {
             firebaseAuth.signOut();

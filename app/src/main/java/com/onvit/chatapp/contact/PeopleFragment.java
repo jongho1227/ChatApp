@@ -3,7 +3,6 @@ package com.onvit.chatapp.contact;
 import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,15 +23,12 @@ import com.bumptech.glide.request.RequestOptions;
 import com.onvit.chatapp.MainActivity;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.User;
-import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.onvit.chatapp.model.UserMap;
+import com.onvit.chatapp.util.UserMap;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class PeopleFragment extends Fragment {
@@ -40,10 +36,9 @@ public class PeopleFragment extends Fragment {
     private AppCompatActivity activity;
     private ValueEventListener valueEventListener;
     private List<User> userList;
-    private PeopleFragmentRecyclerAdapter pf = new PeopleFragmentRecyclerAdapter();
 
     public PeopleFragment() {
-
+        userList = UserMap.getUser();
     }
 
     @Nullable
@@ -56,15 +51,23 @@ public class PeopleFragment extends Fragment {
         ActionBar actionBar = activity.getSupportActionBar();
         actionBar.setTitle("연락처 목록");
 
-        userList = UserMap.getUser();
-
         RecyclerView recyclerView = view.findViewById(R.id.peoplefragment_recyclerview);
+        PeopleFragmentRecyclerAdapter pf = new PeopleFragmentRecyclerAdapter();
         recyclerView.setLayoutManager(new LinearLayoutManager(inflater.getContext()));
         recyclerView.setAdapter(pf);
 
         return view;
     }
 
+
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+       if(valueEventListener!=null){
+           FirebaseDatabase.getInstance().getReference().child("Users").removeEventListener(valueEventListener);
+       }
+    }
 
     class PeopleFragmentRecyclerAdapter extends RecyclerView.Adapter<PeopleFragmentRecyclerAdapter.CustomViewHolder> {
 
@@ -92,7 +95,6 @@ public class PeopleFragment extends Fragment {
 
         @Override
         public void onBindViewHolder(@NonNull CustomViewHolder holder, final int position) {
-            Log.d("홀더붙는순서(연락처)", position+"");
             //position0번 부터 붙음
 
             holder.lineText.setVisibility(View.GONE);

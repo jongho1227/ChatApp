@@ -11,6 +11,7 @@
         android:layout_height="wrap_content"
         android:id="@+id/frienditem_checkbox"
         android:layout_gravity="center_vertical"
+        android:checked="false"
         android:layout_marginLeft="20dp"/>
     <ImageView
         android:id="@+id/chatitem_imageview"

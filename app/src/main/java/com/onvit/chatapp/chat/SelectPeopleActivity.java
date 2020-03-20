@@ -40,12 +40,12 @@ import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.Img;
 import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.model.User;
-import com.onvit.chatapp.model.UserMap;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,12 +55,16 @@ public class SelectPeopleActivity extends AppCompatActivity {
     private Toolbar chatToolbar;
     private ValueEventListener valueEventListener;
     private List<User> selectUserList = new ArrayList<>();
+    private Map<String, Object> messageReadUsers = new HashMap<>();
+    private Map<String, Object> existUserGroupChat = new HashMap<>();
     private PeopleFragmentRecyclerAdapter pf = new PeopleFragmentRecyclerAdapter();
     private String uid;
     private List<User> pList = new ArrayList<>();
     private Button b;
     private EditText e;
     private DatabaseReference databaseReference;
+    private Map<String, User> users = new HashMap<>();
+    private String toRoom;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,15 +76,16 @@ public class SelectPeopleActivity extends AppCompatActivity {
         ActionBar actionBar = getSupportActionBar();
         actionBar.setTitle("인원 선택");
         actionBar.setDisplayHomeAsUpEnabled(true);
-
         RecyclerView recyclerView = findViewById(R.id.peoplefragment_recyclerview);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(pf);
         databaseReference = FirebaseDatabase.getInstance().getReference();
         b = findViewById(R.id.create_chat);
         e = findViewById(R.id.chat_name);
-
+        users = UserMap.getInstance();
         if (getIntent().getStringExtra("plus") == null) {
+            messageReadUsers.clear();
+            existUserGroupChat.clear();
             b.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -116,13 +121,18 @@ public class SelectPeopleActivity extends AppCompatActivity {
                             ChatModel chatModel = new ChatModel();
                             LastChat lastChat = new LastChat();
                             lastChat.setChatName(chatName);
+                            String message = "";
                             Map<String, Boolean> existUser = new HashMap<>();
                             Map<String, Integer> users = new HashMap<>();
                             for (User u : pList) {
                                 chatModel.users.put(u.getUid(), false);
                                 existUser.put(u.getUid(), true);
                                 users.put(u.getUid(), 0);
+                                message = message + String.format("%s(%s)님, ",u.getUserName(), u.getHospital());
+                                messageReadUsers.put(u.getUid(), true);
+                                existUserGroupChat.put(u.getUid(), true);
                             }
+                            final String message2 = message.substring(0, message.length()-2)+"이 채팅방에 참여하였습니다.";
                             chatModel.id = c;
                             lastChat.setExistUsers(existUser);
                             lastChat.setUsers(users);
@@ -141,6 +151,15 @@ public class SelectPeopleActivity extends AppCompatActivity {
                                     UserMap.getComments().clear();
                                     intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
                                     ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(SelectPeopleActivity.this, R.anim.frombottom, R.anim.totop);
+
+                                    ChatModel.Comment comment = new ChatModel.Comment();
+                                    comment.uid = uid;
+                                    comment.message = message2;
+                                    comment.timestamp = new Date().getTime();
+                                    comment.type = "io";
+                                    comment.readUsers = messageReadUsers;
+                                    comment.existUser = existUserGroupChat;
+                                    databaseReference.child("groupChat").child(chatName).child("comments").push().setValue(comment);
                                     startActivity(intent, activityOptions.toBundle());
                                     finish();
                                 }
@@ -157,6 +176,13 @@ public class SelectPeopleActivity extends AppCompatActivity {
             });
         } else {
             userlist = getIntent().getParcelableArrayListExtra("userlist");
+            messageReadUsers = (Map<String, Object>) getIntent().getSerializableExtra("readUser");
+
+            for(User u : userlist){
+                messageReadUsers.put(u.getUid(),true);
+            }
+            existUserGroupChat = (Map<String, Object>) getIntent().getSerializableExtra("existUser");
+            toRoom = getIntent().getStringExtra("room");
             String chatName = getIntent().getStringExtra("room");
             if(chatName.equals("normalChat")){
                 chatName = "회원채팅방";
@@ -170,19 +196,36 @@ public class SelectPeopleActivity extends AppCompatActivity {
             b.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    String message = "";
+                    if(users.get(uid)!=null){
+                        message = String.format("%s(%s)님이 ",users.get(uid).getUserName(),users.get(uid).getHospital());
+                    }
                     Map<String, Object> map = new HashMap<>();
                     Map<String, Object> map2 = new HashMap<>();
                     for (User u : pList) {
                         map.put("users/" + u.getUid(), false);
                         map2.put("existUsers/" + u.getUid(), true);
                         map2.put("users/" + u.getUid(), 0);
+                        if(u.getUid().equals(uid)){
+                            continue;
+                        }
+                        messageReadUsers.put(u.getUid(),true);
+                        existUserGroupChat.put(u.getUid(), true);
+                        message = message + String.format("%s(%s)님, ",u.getUserName(), u.getHospital());
                     }
-
+                    message = message.substring(0, message.length()-2)+"을 초대하였습니다.";
                     databaseReference.child("groupChat").child(getIntent().getStringExtra("room")).updateChildren(map);
+                    ChatModel.Comment comment = new ChatModel.Comment();
+                    comment.uid = uid;
+                    comment.message = message;
+                    comment.timestamp = new Date().getTime();
+                    comment.type = "io";
+                    comment.readUsers = messageReadUsers;
+                    comment.existUser = existUserGroupChat;
+                    databaseReference.child("groupChat").child(toRoom).child("comments").push().setValue(comment);
                     databaseReference.child("lastChat").child(getIntent().getStringExtra("room")).updateChildren(map2).addOnCompleteListener(new OnCompleteListener<Void>() {
                         @Override
                         public void onComplete(@NonNull Task<Void> task) {
-                            Toast.makeText(SelectPeopleActivity.this, "초대성공.", Toast.LENGTH_SHORT).show();
                             finish();
                         }
                     });
@@ -209,6 +252,15 @@ public class SelectPeopleActivity extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
         }
     }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (valueEventListener != null) {
+            FirebaseDatabase.getInstance().getReference().child("Users").removeEventListener(valueEventListener); // 이벤트 제거.
+        }
+    }
+
     class PeopleFragmentRecyclerAdapter extends RecyclerView.Adapter<PeopleFragmentRecyclerAdapter.CustomViewHolder> {
 
         public PeopleFragmentRecyclerAdapter() {
@@ -257,6 +309,12 @@ public class SelectPeopleActivity extends AppCompatActivity {
             Log.d("홀더붙는순서(연락처)", position + "");
             //position0번 부터 붙음
             holder.check.setVisibility(View.VISIBLE);
+            holder.check.setChecked(false);
+
+            if(pList.contains(selectUserList.get(position))){
+                holder.check.setChecked(true);
+            }
+
             holder.lineText.setVisibility(View.GONE);
 
             if (position == 1) {// 본인이랑 다음사람이랑 구분선.

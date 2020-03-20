@@ -2,12 +2,14 @@ package com.onvit.chatapp;
 
 import android.Manifest;
 import android.app.ActivityOptions;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.Settings;
@@ -16,25 +18,17 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
-import com.bumptech.glide.request.RequestOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.bottomnavigation.BottomNavigationItemView;
 import com.google.android.material.bottomnavigation.BottomNavigationMenuView;
@@ -54,20 +48,17 @@ import com.onvit.chatapp.admin.SetupFragment;
 import com.onvit.chatapp.chat.ChatFragment;
 import com.onvit.chatapp.chat.GroupMessageActivity;
 import com.onvit.chatapp.chat.SelectGroupChatActivity;
-import com.onvit.chatapp.chat.SelectPeopleActivity;
 import com.onvit.chatapp.contact.PeopleFragment;
 import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.Img;
 import com.onvit.chatapp.model.LastChat;
 import com.onvit.chatapp.model.User;
-import com.onvit.chatapp.model.UserMap;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.notice.NoticeFragment;
 import com.onvit.chatapp.util.PreferenceManager;
 import com.onvit.chatapp.util.Utiles;
 
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -246,6 +237,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        requestNotificationPolicyAccess();
         if (getIntent().getStringExtra("tag") != null) {
             if (!getIntent().getStringExtra("tag").equals("notice")) {
                 final String toRoom = getIntent().getStringExtra("tag");
@@ -325,7 +317,7 @@ public class MainActivity extends AppCompatActivity {
         if (user.getHospital().equals("개발자")) {
             menu.findItem(R.id.admin).setVisible(true);
         }
-        if (user.getHospital().equals("개발자") || user.getHospital().equals("삼선병원")) {
+        if (user.getHospital().equals("개발자")) {
             menu.findItem(R.id.invite).setVisible(true);
         }
         return true;
@@ -342,6 +334,7 @@ public class MainActivity extends AppCompatActivity {
             map.put("pushToken", "");
             FirebaseDatabase.getInstance().getReference().child("Users").child(uid).updateChildren(map);
             NotificationManagerCompat.from(this).cancelAll();
+            UserMap.clearApp();
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             intent.putExtra("logOut", "logOut");
             PreferenceManager.clear(this);
@@ -445,5 +438,32 @@ public class MainActivity extends AppCompatActivity {
                     });
             return null;
         }
+    }
+    private void requestNotificationPolicyAccess() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT < Build.VERSION_CODES.O && !isNotificationPolicyAccessGranted()) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setTitle("앱 설정으로 이동합니다. \n[방해금지권한]을 허용해주세요.");
+            builder.setMessage("해당 기종은 알림기능사용을 위해 해당 권한이 필요합니다.");
+            builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    Intent intent = new Intent(android.provider.Settings.
+                            ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS);
+                    startActivity(intent);
+                }
+            });
+            final AlertDialog dialog = builder.create();
+            dialog.setCancelable(false);
+            dialog.setCanceledOnTouchOutside(false);
+            dialog.show();
+        }
+    }
+    private boolean isNotificationPolicyAccessGranted()  {
+        NotificationManager notificationManager = (NotificationManager)
+                MainActivity.this.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return notificationManager.isNotificationPolicyAccessGranted();
+        }
+        return true;
     }
 }

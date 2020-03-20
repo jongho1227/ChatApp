@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.KeyEvent;
@@ -30,6 +31,12 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.karumi.dexter.Dexter;
+import com.karumi.dexter.PermissionToken;
+import com.karumi.dexter.listener.PermissionDeniedResponse;
+import com.karumi.dexter.listener.PermissionGrantedResponse;
+import com.karumi.dexter.listener.PermissionRequest;
+import com.karumi.dexter.listener.single.PermissionListener;
 import com.onvit.chatapp.certification.CertificateActivity;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.PreferenceManager;
@@ -65,7 +72,6 @@ public class LoginActivity extends AppCompatActivity {
         signup = findViewById(R.id.loginactivity_button_signup);
         search = findViewById(R.id.loginactivity_button_search);
         requestPermission();
-
         password.setImeOptions(EditorInfo.IME_ACTION_DONE);
         password.setOnEditorActionListener(new TextView.OnEditorActionListener() { // 완료눌러도 회원가입기능되게~
             @Override
@@ -145,7 +151,6 @@ public class LoginActivity extends AppCompatActivity {
             }
         };
     }
-
     void loginEvent() {
         if (id.getText().toString() == null || id.getText().toString().equals("") || password.getText().toString() == null || password.getText().toString().equals("")) {
             return;
@@ -177,6 +182,11 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    @Override
     protected void onStop() {
         super.onStop();
         if (authStateListener != null) {
@@ -197,7 +207,6 @@ public class LoginActivity extends AppCompatActivity {
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             arrayPermission.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
-
         if (arrayPermission.size() > 0) {
             String[] strArray = new String[arrayPermission.size()];
             strArray = arrayPermission.toArray(strArray);
