@@ -24,6 +24,7 @@ public class NotificationModel {
         public String body;
         public String tag;
         public String click_action;
+        public String uri;
     }
 
 }

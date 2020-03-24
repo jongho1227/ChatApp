@@ -99,11 +99,11 @@ public class ChatFragment extends Fragment {
                 if (btn.isChecked()) {
                     btn.setBackgroundDrawable(getResources().getDrawable(R.drawable.ic_notifications_vibrate));
                     activity.getSharedPreferences(activity.getPackageName(), Context.MODE_PRIVATE).edit().putInt("vibrate", 0).apply();
-                    Toast.makeText(activity, "앱의 알림이 설정되었습니다.", Toast.LENGTH_SHORT).show();
+                    Utiles.customToast(getActivity(),"앱의 알림이 설정되었습니다.").show();
                 } else {
                     btn.setBackgroundDrawable(getResources().getDrawable(R.drawable.ic_notifications_no_vibrate));
                     activity.getSharedPreferences(activity.getPackageName(), Context.MODE_PRIVATE).edit().putInt("vibrate", 1).apply();
-                    Toast.makeText(activity, "앱의 알림이 해제되었습니다.", Toast.LENGTH_SHORT).show();
+                    Utiles.customToast(getActivity(),"앱의 알림이 해제되었습니다.").show();
                 }
             }
         });

@@ -51,7 +51,9 @@ import com.onvit.chatapp.R;
 import com.onvit.chatapp.chat.GroupMessageActivity;
 import com.onvit.chatapp.model.Notice;
 import com.onvit.chatapp.model.NotificationModel;
+import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.PreferenceManager;
+import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.Utiles;
 import com.vlk.multimager.activities.GalleryActivity;
 import com.vlk.multimager.utils.Constants;
@@ -100,6 +102,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
     private DatabaseReference firebaseDatabase;
     private String uid;
     private ArrayList<String> registration_ids = new ArrayList<>();
+    private Map<String, User> userMap;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -120,6 +123,9 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
         imgUri = null;
         firebaseDatabase = FirebaseDatabase.getInstance().getReference();
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        userMap = UserMap.getInstance();
+
+
         registration_ids = getIntent().getStringArrayListExtra("userList");
         if (getIntent().getStringExtra("modify") != null) {
             noticeName = "공지사항 수정";
@@ -243,7 +249,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
         if (title.equals("") || content.equals("")) {
             NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
             dialog.dismiss();
-            Toast.makeText(NoticeActivity.this, "제목과 내용을 입력하시기 바랍니다.", Toast.LENGTH_SHORT).show();
+            Utiles.customToast(NoticeActivity.this, "제목과 내용을 입력하시기 바랍니다.").show();
             return;
         }
 
@@ -288,7 +294,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                     @Override
                     public Task<Uri> then(@NonNull Task<UploadTask.TaskSnapshot> task) throws Exception {
                         if (!task.isSuccessful()) {
-                            Toast.makeText(NoticeActivity.this, "오류.", Toast.LENGTH_SHORT).show();
+                            Utiles.customToast(NoticeActivity.this, "오류").show();
                             dialog.dismiss();
                             throw task.getException();
                         }
@@ -326,13 +332,14 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                                             public void onSuccess(Void aVoid) {
                                                 dialog.dismiss();
                                                 NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                                                Toast.makeText(NoticeActivity.this, "수정하였습니다.", Toast.LENGTH_SHORT).show();
+                                                Utiles.customToast(NoticeActivity.this, "수정하였습니다.").show();
                                                 if (deleteKey.size() > 0) {
                                                     for (String key : deleteKey) {
                                                         FirebaseStorage.getInstance().getReference().child("Notice Img").child(code).child(key).delete();
                                                     }
                                                 }
-                                                Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice");
+                                                Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this,
+                                                        "notice",userMap.get(uid).getUserProfileImageUrl());
                                                 finish();
                                             }
                                         });
@@ -367,13 +374,13 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                         public void onSuccess(Void aVoid) {
                             dialog.dismiss();
                             NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                            Toast.makeText(NoticeActivity.this, "수정하였습니다.", Toast.LENGTH_SHORT).show();
+                            Utiles.customToast(NoticeActivity.this, "수정하였습니다.").show();
                             if (deleteKey.size() > 0) {
                                 for (String key : deleteKey) {
                                     FirebaseStorage.getInstance().getReference().child("Notice Img").child(code).child(key).delete();
                                 }
                             }
-                            Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice");
+                            Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice",userMap.get(uid).getUserProfileImageUrl());
                             finish();
                         }
                     });
@@ -389,7 +396,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
         if (title.equals("") || content.equals("")) {
             NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
             dialog.dismiss();
-            Toast.makeText(NoticeActivity.this, "제목과 내용을 입력하시기 바랍니다.", Toast.LENGTH_SHORT).show();
+            Utiles.customToast(NoticeActivity.this, "제목과 내용을 입력하시기 바랍니다.").show();
             return;
         }
         final Map<String, String> imgUriList = new HashMap<>();
@@ -452,8 +459,8 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                                     public void onSuccess(Void aVoid) {
                                         dialog.dismiss();
                                         NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                                        Toast.makeText(NoticeActivity.this, "공지사항을 등록하였습니다.", Toast.LENGTH_SHORT).show();
-                                        Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice");
+                                        Utiles.customToast(NoticeActivity.this, "공지사항을 등록하였습니다.").show();
+                                        Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice",userMap.get(uid).getUserProfileImageUrl());
                                         finish();
                                     }
                                 });
@@ -481,8 +488,8 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
                 public void onSuccess(Void aVoid) {
                     dialog.dismiss();
                     NoticeActivity.this.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE);
-                    Toast.makeText(NoticeActivity.this, "공지사항을 등록하였습니다.", Toast.LENGTH_SHORT).show();
-                    Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice");
+                    Utiles.customToast(NoticeActivity.this, "공지사항을 등록하였습니다.").show();
+                    Utiles.sendFcm(registration_ids, "새로운 공지가 등록되었습니다.", NoticeActivity.this, "notice",userMap.get(uid).getUserProfileImageUrl());
                     finish();
                 }
             });

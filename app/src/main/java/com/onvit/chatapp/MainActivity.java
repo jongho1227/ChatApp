@@ -181,7 +181,7 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case PERMISSION_REQUEST_CODE: {
                 if (grantResults.length < 1) {
-                    Toast.makeText(this, "권한을 받아오는데 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                    Utiles.customToast(this, "권한을 받아오는데 실패하였습니다.").show();
                     super.onRequestPermissionsResult(requestCode, permissions, grantResults);
                     return;
                 }
@@ -221,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
                             dialog.show();
                         }
                     } else {
-                        Toast.makeText(this, "권한을 허용하였습니다.", Toast.LENGTH_SHORT).show();
+                        Utiles.customToast(this, "권한을 허용하였습니다.").show();
                         // Initialize 코드
                     }
                 }
@@ -293,6 +293,7 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         databaseReference.child("lastChat").orderByChild("existUsers/" + uid).equalTo(true).addValueEventListener(valueEventListener);
+
 
 
     }

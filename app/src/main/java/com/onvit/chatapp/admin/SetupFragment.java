@@ -26,6 +26,7 @@ import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.util.PreferenceManager;
+import com.onvit.chatapp.util.Utiles;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -64,12 +65,11 @@ public class SetupFragment extends Fragment implements View.OnClickListener {
                 if (activity.getSharedPreferences(activity.getPackageName(), Context.MODE_PRIVATE).getInt("vibrate", 0) == 0) {
                     activity.getSharedPreferences(activity.getPackageName(), Context.MODE_PRIVATE).edit().putInt("vibrate", 1).apply();
                     notify.setChecked(false);
-                    Toast.makeText(activity, "앱의 알림이 해제되었습니다.", Toast.LENGTH_SHORT).show();
-
+                    Utiles.customToast(activity, "앱의 알림이 해제되었습니다.").show();
                 } else {
                     activity.getSharedPreferences(activity.getPackageName(), Context.MODE_PRIVATE).edit().putInt("vibrate", 0).apply();
                     notify.setChecked(true);
-                    Toast.makeText(activity, "앱의 알림이 설정되었습니다.", Toast.LENGTH_SHORT).show();
+                    Utiles.customToast(activity, "앱의 알림이 설정되었습니다.").show();
                 }
 
             }

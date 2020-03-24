@@ -47,6 +47,7 @@ import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.Notice;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.PreferenceManager;
+import com.onvit.chatapp.util.Utiles;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -120,7 +121,6 @@ public class SignUpActivity extends AppCompatActivity {
         tPassword.setErrorEnabled(true);
         signup = findViewById(R.id.signupActivity_button_signup);
         password.setImeOptions(EditorInfo.IME_ACTION_DONE);
-
 
         if (getIntent().getParcelableExtra("modify") == null) {
             final User joinUser = getIntent().getParcelableExtra("user");
@@ -347,13 +347,12 @@ public class SignUpActivity extends AppCompatActivity {
         FirebaseAuth.getInstance()
                 .createUserWithEmailAndPassword(email.getText().toString(), password.getText().toString()) // 비밀번호 6자리 이상으로 해야함. 안그러면 firebase에러뜸.
                 .addOnCompleteListener(SignUpActivity.this, new OnCompleteListener<AuthResult>() {
-
                     //fireabseAuth 생성이 성공하면~
                     @Override
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (task.getException() != null) {
                             dialog.dismiss();
-                            Toast.makeText(SignUpActivity.this, task.getException().toString(), Toast.LENGTH_LONG).show();
+                            Utiles.customToast(SignUpActivity.this,  task.getException().toString()).show();
                             return;
                         }
                         final String uid = task.getResult().getUser().getUid();
@@ -365,7 +364,6 @@ public class SignUpActivity extends AppCompatActivity {
                         signUser.setUserEmail(email.getText().toString());
                         signUser.setPushToken("");
                         signUser.setUid(uid);
-
                         if (imageUri != null) {
                             Bitmap bitmap = resize(SignUpActivity.this, imageUri, 500);
                             ExifInterface exif = null;
@@ -477,13 +475,13 @@ public class SignUpActivity extends AppCompatActivity {
                 }).addOnCanceledListener(SignUpActivity.this, new OnCanceledListener() {
             @Override
             public void onCanceled() {
-                Toast.makeText(SignUpActivity.this, "가입취소", Toast.LENGTH_SHORT).show();
+                Utiles.customToast(SignUpActivity.this,"가입취소").show();
             }
         }).addOnFailureListener(SignUpActivity.this, new OnFailureListener() {
             @Override
             public void onFailure(@NonNull Exception e) {
                 dialog.dismiss();
-                Toast.makeText(SignUpActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
+                Utiles.customToast(SignUpActivity.this, e.toString()).show();
                 return;
 
             }
@@ -497,7 +495,7 @@ public class SignUpActivity extends AppCompatActivity {
             tPassword.setError("");
             tHospital.setError("");
             tName.setError("이름을 입력하세요.");
-            Toast.makeText(SignUpActivity.this, "이름을 입력하세요.", Toast.LENGTH_SHORT).show();
+            Utiles.customToast(SignUpActivity.this, "이름을 입력하세요.").show();
             return true;
         }
         if (hospital.getText().toString().replace(" ", "").equals("")) {
@@ -506,7 +504,7 @@ public class SignUpActivity extends AppCompatActivity {
             tPassword.setError("");
             tName.setError("");
             tHospital.setError("병원을 입력하세요.");
-            Toast.makeText(SignUpActivity.this, "병원을 입력하세요.", Toast.LENGTH_SHORT).show();
+            Utiles.customToast(SignUpActivity.this, "병원을 입력하세요.").show();
             return true;
         }
         if (tel.getText().toString().replace(" ", "").equals("")) {
@@ -515,7 +513,7 @@ public class SignUpActivity extends AppCompatActivity {
             tHospital.setError("");
             tName.setError("");
             tTel.setError("전화번호을 입력하세요.");
-            Toast.makeText(SignUpActivity.this, "전화번호을 입력하세요.", Toast.LENGTH_SHORT).show();
+            Utiles.customToast(SignUpActivity.this, "전화번호을 입력하세요.").show();
             return true;
         }
         if (email.getText().toString().replace(" ", "").equals("") || checkEmail(email.getText().toString())) {
@@ -524,7 +522,7 @@ public class SignUpActivity extends AppCompatActivity {
             tPassword.setError("");
             tHospital.setError("");
             tEmail.setError("이메일을 형식에 맞게 입력하세요.");
-            Toast.makeText(SignUpActivity.this, "이메일을 형식에 맞게 입력하세요.", Toast.LENGTH_SHORT).show();
+            Utiles.customToast(SignUpActivity.this, "이메일을 형식에 맞게 입력하세요.").show();
             return true;
         }
         if (password.getText().toString().replace(" ", "").equals("") || password.getText().length() < 6) {
@@ -533,7 +531,7 @@ public class SignUpActivity extends AppCompatActivity {
             tName.setError("");
             tHospital.setError("");
             tPassword.setError("비밀번호를 6자리 이상으로 입력하세요.");
-            Toast.makeText(SignUpActivity.this, "비밀번호를 6자리 이상으로 입력하세요.", Toast.LENGTH_SHORT).show();
+            Utiles.customToast(SignUpActivity.this, "비밀번호를 6자리 이상으로 입력하세요.").show();
             return true;
         }
         return false;
@@ -581,7 +579,7 @@ public class SignUpActivity extends AppCompatActivity {
             profileImageView.setImageURI(imageUri);
             filePath = getRealPathFromURI(imageUri);
             if (filePath == null) {
-                Toast.makeText(SignUpActivity.this, "지원하지 않는 이미지 형식입니다.", Toast.LENGTH_SHORT).show();
+                Utiles.customToast(SignUpActivity.this, "지원하지 않는 이미지 형식입니다.").show();
                 return;
             }
         }

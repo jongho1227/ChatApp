@@ -91,7 +91,7 @@ public class SelectPeopleActivity extends AppCompatActivity {
                 public void onClick(View view) {
                     final String chatName = e.getText().toString().trim();
                     if (chatName.equals("")) {
-                        Toast.makeText(SelectPeopleActivity.this, "채팅방이름을 입력해주세요.", Toast.LENGTH_SHORT).show();
+                        Utiles.customToast(SelectPeopleActivity.this, "채팅방이름을 입력해주세요.").show();
                         return;
                     }
                     final AlertDialog d = Utiles.createLoadingDialog(SelectPeopleActivity.this, "채팅방을 생성하는 중입니다.");
@@ -102,7 +102,7 @@ public class SelectPeopleActivity extends AppCompatActivity {
                             List<Integer> count = new ArrayList<>();
                             for (DataSnapshot i : dataSnapshot.getChildren()) {
                                 if (chatName.equals(i.getKey())) {
-                                    Toast.makeText(SelectPeopleActivity.this, "중복된 채팅방이름이 존재합니다.", Toast.LENGTH_SHORT).show();
+                                    Utiles.customToast(SelectPeopleActivity.this, "중복된 채팅방이름이 존재합니다.").show();
                                     return;
                                 }
                                 ChatModel chatModel = i.getValue(ChatModel.class);
@@ -143,7 +143,7 @@ public class SelectPeopleActivity extends AppCompatActivity {
                                 public void onComplete(@NonNull Task<Void> task) {
                                     List<ChatModel.Comment> newComments = new ArrayList<>();
                                     List<Img> img_list = new ArrayList<>();
-                                    Toast.makeText(SelectPeopleActivity.this, "채팅방을 생성하였습니다.", Toast.LENGTH_SHORT).show();
+                                    Utiles.customToast(SelectPeopleActivity.this, "채팅방을 생성하였습니다.").show();
                                     Intent intent = new Intent(SelectPeopleActivity.this, GroupMessageActivity.class);
                                     intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
                                     intent.putExtra("toRoom", chatName); // 방이름

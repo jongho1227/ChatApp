@@ -11,7 +11,6 @@
         android:layout_height="wrap_content"
         android:id="@+id/frienditem_checkbox"
         android:layout_gravity="center_vertical"
-        android:checked="false"
         android:layout_marginLeft="20dp"/>
     <ImageView
         android:id="@+id/chatitem_imageview"
@@ -30,9 +29,12 @@
             android:id="@+id/chatitem_textview_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:maxWidth="150dp"
             android:textColor="@color/black"
             android:textSize="24dp"
             android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
             tools:text="방 이름" />
         <TextView
             android:id="@+id/user_count"

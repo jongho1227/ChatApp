@@ -29,6 +29,7 @@ import com.bumptech.glide.request.RequestOptions;
 import com.github.chrisbanes.photoview.PhotoView;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.Img;
+import com.onvit.chatapp.util.Utiles;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -186,7 +187,7 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
             startActivity(Intent.createChooser(shareIntent, "친구에게 공유하기"));
 
         } catch (Exception e) {
-            Toast.makeText(BigPictureActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            Utiles.customToast(BigPictureActivity.this, e.getMessage()).show();
         }
     }
 
@@ -195,27 +196,25 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
             if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
                 String[] permission = {Manifest.permission.WRITE_EXTERNAL_STORAGE};
                 requestPermissions(permission, WRITE_EXTERNAL_STORAGE_CODE);
-            } else {
-                Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
-                String time = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.KOREA).format(System.currentTimeMillis());
-                File path = Environment.getExternalStorageDirectory();
-                File dir = new File(path + "/KCHA/DownloadImg");
-                dir.mkdirs();
-                String imagename = time + ".PNG";
-                File file = new File(dir, imagename);
-                OutputStream out;
-                try {
-                    out = new FileOutputStream(file);
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-                    out.flush();
-                    out.close();
-
-                    Toast.makeText(BigPictureActivity.this, "사진이 저장되었습니다.", Toast.LENGTH_SHORT).show();
-                    BigPictureActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
-                } catch (Exception e) {
-                    Toast.makeText(BigPictureActivity.this, e.getMessage(), Toast.LENGTH_SHORT).show();
-                }
             }
+        }
+        Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
+        String time = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.KOREA).format(System.currentTimeMillis());
+        File path = Environment.getExternalStorageDirectory();
+        File dir = new File(path + "/KCHA/DownloadImg");
+        dir.mkdirs();
+        String imagename = time + ".PNG";
+        File file = new File(dir, imagename);
+        OutputStream out;
+        try {
+            out = new FileOutputStream(file);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+            out.flush();
+            out.close();
+            Utiles.customToast(BigPictureActivity.this, "사진이 저장되었습니다.").show();
+            BigPictureActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
+        } catch (Exception e) {
+            Utiles.customToast(BigPictureActivity.this, e.getMessage()).show();
         }
     }
     @Override
@@ -225,7 +224,7 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
                 } else {
-                    Toast.makeText(this, "Permission enable", Toast.LENGTH_SHORT).show();
+                    Utiles.customToast(BigPictureActivity.this,"Permission enable").show();
                 }
         }
     }

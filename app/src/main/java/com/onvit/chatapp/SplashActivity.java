@@ -100,12 +100,17 @@ public class SplashActivity extends AppCompatActivity {
                                 a.setCanceledOnTouchOutside(false);
                                 a.show();
                             }
-                            try {
-                                Thread.sleep(500);
-                                accessFirebase();
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                            }
+                            new Thread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        Thread.sleep(500);
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                    }
+                                    accessFirebase();
+                                }
+                            }).start();
                         }
                     }
                 });

@@ -40,6 +40,7 @@ import com.karumi.dexter.listener.single.PermissionListener;
 import com.onvit.chatapp.certification.CertificateActivity;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.util.PreferenceManager;
+import com.onvit.chatapp.util.Utiles;
 
 import java.util.ArrayList;
 
@@ -136,7 +137,7 @@ public class LoginActivity extends AppCompatActivity {
                                 dialog.dismiss();
                                 finish();
                             } else {
-                                Toast.makeText(LoginActivity.this, "회원정보를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                                Utiles.customToast(LoginActivity.this, "회원정보를 찾을 수 없습니다.").show();
                                 dialog.dismiss();
                             }
                         }
@@ -167,7 +168,7 @@ public class LoginActivity extends AppCompatActivity {
                     public void onComplete(@NonNull Task<AuthResult> task) {
                         if (!task.isSuccessful()) {
                             //로그인 실패한부분
-                            Toast.makeText(LoginActivity.this, "이메일과 비밀번호를 정확하게 입력하세요.", Toast.LENGTH_SHORT).show();
+                            Utiles.customToast(LoginActivity.this, "이메일과 비밀번호를 정확하게 입력하세요.").show();
                             dialog.dismiss();
                         } else {
                         }
@@ -219,7 +220,7 @@ public class LoginActivity extends AppCompatActivity {
         switch (requestCode) {
             case PERMISSION_REQUEST_CODE: {
                 if (grantResults.length < 1) {
-                    Toast.makeText(this, "권한을 받아오는데 실패하였습니다.", Toast.LENGTH_SHORT).show();
+                    Utiles.customToast(LoginActivity.this, "권한을 받아오는데 실패하였습니다.").show();
                     super.onRequestPermissionsResult(requestCode, permissions, grantResults);
                     return;
                 }
@@ -260,7 +261,7 @@ public class LoginActivity extends AppCompatActivity {
                             dialog.show();
                         }
                     } else {
-                        Toast.makeText(this, "권한을 허용하였습니다.", Toast.LENGTH_SHORT).show();
+                        Utiles.customToast(LoginActivity.this, "권한을 허용하였습니다.").show();
                         // Initialize 코드
                     }
                 }

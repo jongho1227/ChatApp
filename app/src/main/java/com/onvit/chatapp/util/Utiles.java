@@ -1,12 +1,19 @@
 package com.onvit.chatapp.util;
 
+import android.app.Activity;
 import android.content.Context;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.request.RequestOptions;
 import com.google.gson.Gson;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.NotificationModel;
@@ -39,7 +46,8 @@ public class Utiles {
         return dialog;
     }
 
-    public static void sendFcm(List<String> registration_ids, String message, Context context, String toRoom) {
+    public static void sendFcm(List<String> registration_ids, String message, Context context, String toRoom, String uri) {
+        Log.d("들어오는수", "dd");
         Gson gson = new Gson();
         String userName = PreferenceManager.getString(context, "name");
         NotificationModel notificationModel = new NotificationModel();
@@ -55,6 +63,7 @@ public class Utiles {
         notificationModel.data.body = message;
         notificationModel.data.tag = toRoom;
         notificationModel.data.click_action = "GroupMessage";
+        notificationModel.data.uri = uri;
         notificationModel.content_available = true;
         notificationModel.priority = "high";
         notificationModel.delay_while_idle = false;
@@ -78,5 +87,17 @@ public class Utiles {
 
             }
         });
+    }
+    public static Toast customToast(Activity context, String text){
+        Toast toast = new Toast(context);
+        View custom = context.getLayoutInflater().inflate(R.layout.custom_toast,null);
+        TextView textView = custom.findViewById(R.id.message_toast);
+        textView.setText(text);
+        ImageView imageView = custom.findViewById(R.id.logo_toast);
+        Glide.with(context).load(R.drawable.logo_high).apply(new RequestOptions().centerCrop()).into(imageView);
+        toast.setView(custom);
+        toast.setDuration(Toast.LENGTH_SHORT);
+        toast.setGravity(Gravity.CENTER,0,0);
+        return toast;
     }
 }

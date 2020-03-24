@@ -31,6 +31,7 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.onvit.chatapp.BuildConfig;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.ChatModel;
+import com.onvit.chatapp.util.Utiles;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -136,7 +137,7 @@ public class FileActivity extends AppCompatActivity {
     class FileRecyclerAdapter extends RecyclerView.Adapter<FileRecyclerAdapter.FileViewHolder> {
 
 
-        private FileRecyclerAdapter() {
+        public FileRecyclerAdapter() {
 
         }
 
@@ -150,7 +151,7 @@ public class FileActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(@NonNull final FileViewHolder holder, final int position) {
 
-            SimpleDateFormat sd = new SimpleDateFormat("yyyy년 MM월 dd일", Locale.KOREA);
+            SimpleDateFormat sd = new SimpleDateFormat("yyyy년 MM월 dd일");
 
             long d = (long) list.get(position).timestamp;
 
@@ -174,7 +175,6 @@ public class FileActivity extends AppCompatActivity {
                             intent.setDataAndType(Uri.parse("http" + fileName[1]), "application/pdf");
                             startActivity(intent);
                         } else {
-
                             //외부앱 파일 접근할시 fileprovider써야함. 외부sd저장소 등 접근하려면 file_path.xml에 root설정.
                             File path = Environment.getExternalStorageDirectory();
                             File dir = new File(path + "/KCHA/DownloadFile");
@@ -185,7 +185,7 @@ public class FileActivity extends AppCompatActivity {
                                     .getFile(file).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
                                 @Override
                                 public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                                    Toast.makeText(FileActivity.this, "파일을 다운받았습니다.", Toast.LENGTH_SHORT).show();
+                                    Utiles.customToast(FileActivity.this, "파일을 다운받았습니다.").show();
                                     try {
                                         Uri uri = FileProvider.getUriForFile(FileActivity.this, BuildConfig.APPLICATION_ID + ".fileprovider", file);
                                         Intent intent = new Intent(Intent.ACTION_VIEW);
@@ -203,20 +203,20 @@ public class FileActivity extends AppCompatActivity {
                                         startActivity(intent);
                                     } catch (Exception e) {
                                         e.printStackTrace();
-                                        Toast.makeText(FileActivity.this, "설치된 뷰어가 없어 파일을 열 수 없습니다.", Toast.LENGTH_SHORT).show();
+                                        Utiles.customToast(FileActivity.this, "설치된 뷰어가 없어 파일을 열 수 없습니다.").show();
                                     }
                                 }
                             }).addOnFailureListener(new OnFailureListener() {
                                 @Override
                                 public void onFailure(@NonNull Exception e) {
-                                    Toast.makeText(FileActivity.this, "파일을 받을 수 없습니다.", Toast.LENGTH_SHORT).show();
+                                    Utiles.customToast(FileActivity.this, "파일을 받을 수 없습니다.").show();
                                 }
                             });
                         }
 
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Toast.makeText(FileActivity.this, "파일을 열 수 없습니다.", Toast.LENGTH_SHORT).show();
+                        Utiles.customToast(FileActivity.this, "파일을 열 수 없습니다.").show();
                     }
                 }
             });
@@ -231,7 +231,7 @@ public class FileActivity extends AppCompatActivity {
         private class FileViewHolder extends RecyclerView.ViewHolder {
             TextView text, date;
 
-            private FileViewHolder(View v) {
+            public FileViewHolder(View v) {
                 super(v);
                 text = v.findViewById(R.id.file_name);
                 date = v.findViewById(R.id.date);

@@ -28,6 +28,7 @@ import com.onvit.chatapp.R;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.model.Vote;
 import com.onvit.chatapp.util.PreferenceManager;
+import com.onvit.chatapp.util.Utiles;
 
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
@@ -85,6 +86,7 @@ public class VoteActivity extends AppCompatActivity {
                 final Map<String, Object> update = new HashMap<>();
 
                 while (it.hasNext()) {
+                    final ToggleButton btn = (ToggleButton) layoutInflater.inflate(R.layout.toggle_vote, vote_layout, false);
                     int count = 0;
                     final String key = it.next();
                     Log.d("항목", key);
@@ -101,10 +103,12 @@ public class VoteActivity extends AppCompatActivity {
                             count++;
                             join.put(key2, true);
                             user.add(key2);
+                            if(key2.equals(uid)){
+                                btn.setBackgroundDrawable(getResources().getDrawable(R.drawable.checked_vote));
+                            }
                         }
                     }
                     detailUser.put(key, user);
-                    final ToggleButton btn = (ToggleButton) layoutInflater.inflate(R.layout.toggle_vote, vote_layout, false);
                     btn.setText(key.substring(1)+"("+count+"명)");
                     btn.setTextOff(key.substring(1)+"("+count+"명)");
                     btn.setTextOn(key.substring(1)+"("+count+"명)");
@@ -156,7 +160,7 @@ public class VoteActivity extends AppCompatActivity {
                                 @Override
                                 public void onClick(DialogInterface dialogInterface, int i) {
                                     databaseReference.child("Vote").child(toRoom).child(vote_key).child("content").updateChildren(update);
-                                    Toast.makeText(VoteActivity.this, "투표를 하였습니다.", Toast.LENGTH_SHORT).show();
+                                    Utiles.customToast(VoteActivity.this, "투표를 하였습니다.").show();
                                     finish();
                                 }
                             }).setNegativeButton("아니요", new DialogInterface.OnClickListener() {

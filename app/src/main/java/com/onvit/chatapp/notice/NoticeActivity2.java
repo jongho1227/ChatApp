@@ -34,6 +34,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.onvit.chatapp.R;
 import com.onvit.chatapp.chat.BigPictureActivity;
+import com.onvit.chatapp.util.Utiles;
 import com.vlk.multimager.utils.Image;
 
 import java.util.ArrayList;
@@ -188,7 +189,7 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
                         firebaseDatabase.child("Notice").updateChildren(map).addOnCompleteListener(new OnCompleteListener<Void>() {
                             @Override
                             public void onComplete(@NonNull Task<Void> task) {
-                                Toast.makeText(NoticeActivity2.this, "삭제하였습니다.", Toast.LENGTH_SHORT).show();
+                                Utiles.customToast(NoticeActivity2.this, "삭제하였습니다.").show();
                                 onBackPressed();
                             }
                         });

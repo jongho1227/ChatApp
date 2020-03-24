@@ -184,12 +184,12 @@ public class VoteRegistrationActivity extends AppCompatActivity {
 
                         if (title.trim().equals("")) {
                             a.dismiss();
-                            Toast.makeText(VoteRegistrationActivity.this, "제목을 입력하여 주세요.", Toast.LENGTH_SHORT).show();
+                            Utiles.customToast(VoteRegistrationActivity.this, "제목을 입력하여 주세요.").show();
                             return;
                         }
                         if (deadline.getText().toString().trim().equals("")) {
                             a.dismiss();
-                            Toast.makeText(VoteRegistrationActivity.this, "마감시간을 정해주세요.", Toast.LENGTH_SHORT).show();
+                            Utiles.customToast(VoteRegistrationActivity.this, "마감시간을 정해주세요.").show();
                             return;
                         }
                         Date d = new Date();
@@ -202,7 +202,7 @@ public class VoteRegistrationActivity extends AppCompatActivity {
 
                         if (today.equals(endDay) || endDayTime - todayTime < 0) {
                             a.dismiss();
-                            Toast.makeText(VoteRegistrationActivity.this, "마감시간은 오늘 이전으로 할 수 없습니다.", Toast.LENGTH_SHORT).show();
+                            Utiles.customToast(VoteRegistrationActivity.this, "마감시간은 오늘 이전으로 할 수 없습니다.").show();
                             return;
                         }
                         Vote vote = new Vote();
@@ -233,7 +233,7 @@ public class VoteRegistrationActivity extends AppCompatActivity {
                         }
                         if (listMap.size() == 0) {
                             a.dismiss();
-                            Toast.makeText(VoteRegistrationActivity.this, "하나이상의 항목을 등록하세요.", Toast.LENGTH_SHORT).show();
+                            Utiles.customToast(VoteRegistrationActivity.this, "하나이상의 항목을 등록하세요.").show();
                             return;
                         }
                         vote.setContent(listMap);
@@ -288,7 +288,7 @@ public class VoteRegistrationActivity extends AppCompatActivity {
                                             }
                                         });
                                         a.dismiss();
-                                        Toast.makeText(VoteRegistrationActivity.this, "투표를 등록하였습니다.", Toast.LENGTH_SHORT).show();
+                                        Utiles.customToast(VoteRegistrationActivity.this, "투표를 등록하였습니다.").show();
                                         databaseReference.child("groupChat").child(toRoom).child("users").addListenerForSingleValueEvent(new ValueEventListener() {
                                             @Override
                                             public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
@@ -303,7 +303,7 @@ public class VoteRegistrationActivity extends AppCompatActivity {
 
                                                     }
                                                 }
-                                                Utiles.sendFcm(registration_ids, "투표를 등록하였습니다.", VoteRegistrationActivity.this, toRoom);
+                                                Utiles.sendFcm(registration_ids, "투표를 등록하였습니다.", VoteRegistrationActivity.this, toRoom,users.get(uid).getUserProfileImageUrl());
                                             }
 
                                             @Override
