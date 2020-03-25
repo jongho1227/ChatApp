@@ -159,6 +159,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             chatRoomName = "회원채팅방";
         }else if(tag.equals("officerChat")){
             chatRoomName = "임원채팅방";
+        }else if(tag.equals("notice")){
+            chatRoomName = "공지사항";
         }
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         intent.putExtra("tag", tag);

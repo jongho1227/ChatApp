@@ -3,7 +3,6 @@ package com.onvit.chatapp.chat;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
@@ -38,8 +37,8 @@ import com.onvit.chatapp.chat.vote.VoteListActivity;
 import com.onvit.chatapp.contact.PersonInfoActivity;
 import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.User;
-import com.onvit.chatapp.util.UserMap;
 import com.onvit.chatapp.model.Vote;
+import com.onvit.chatapp.util.UserMap;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -112,7 +111,7 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
         img.setOnClickListener(this);
         plus.setOnClickListener(this);
         out.setOnClickListener(this);
-        plus.setText("대화멤버 "+userList.size());
+        plus.setText("대화멤버 " + userList.size());
     }
 
     @Override
@@ -184,15 +183,26 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                 break;
             case R.id.out:
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setMessage("채팅방의 모든 내용이 삭제됩니다. \n 정말 나가시겠습니까?");
-                builder.setPositiveButton("예", new DialogInterface.OnClickListener() {
+                View out = LayoutInflater.from(ChatSetInfoActivity.this).inflate(R.layout.out_group_chat, null);
+                builder.setView(out);
+                final AlertDialog dialog = builder.create();
+                dialog.show();
+                TextView cancel = out.findViewById(R.id.cancel);
+                TextView outRoom = out.findViewById(R.id.out);
+                cancel.setOnClickListener(new View.OnClickListener() {
                     @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
+                    public void onClick(View view) {
+                        dialog.dismiss();
+                    }
+                });
+                outRoom.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
                         AlertDialog.Builder builder = new AlertDialog.Builder(ChatSetInfoActivity.this);
-                        View view = LayoutInflater.from(ChatSetInfoActivity.this).inflate(R.layout.loading, null);
-                        TextView tx = view.findViewById(R.id.loading_text);
+                        View v = LayoutInflater.from(ChatSetInfoActivity.this).inflate(R.layout.loading, null);
+                        TextView tx = v.findViewById(R.id.loading_text);
                         tx.setText("채팅내역을 삭제하는 중입니다.");
-                        builder.setView(view);
+                        builder.setView(v);
                         AlertDialog d = builder.create();
                         d.setCanceledOnTouchOutside(false);
                         d.setCancelable(false);
@@ -267,12 +277,12 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                                                                         FirebaseStorage.getInstance().getReference().child("Document Files").child(toRoom).child(d).delete();
                                                                     }
                                                                     FirebaseDatabase.getInstance().getReference().child("Vote").child(toRoom).setValue(null);
-                                                                }else{
+                                                                } else {
                                                                     ChatModel.Comment comment = new ChatModel.Comment();
                                                                     messageReadUsers.remove(uid);
                                                                     existUserGroupChat.remove(uid);
                                                                     comment.uid = uid;
-                                                                    comment.message = String.format("%s(%s)님이 나갔습니다.",users.get(uid).getUserName(),users.get(uid).getHospital());
+                                                                    comment.message = String.format("%s(%s)님이 나갔습니다.", users.get(uid).getUserName(), users.get(uid).getHospital());
                                                                     comment.timestamp = new Date().getTime();
                                                                     comment.type = "io";
                                                                     comment.readUsers = messageReadUsers;
@@ -304,15 +314,7 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                                     }
                                 });
                     }
-                }).setNegativeButton("아니요", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-
-                    }
                 });
-                AlertDialog dialog = builder.create();
-                dialog.show();
-
                 break;
         }
     }

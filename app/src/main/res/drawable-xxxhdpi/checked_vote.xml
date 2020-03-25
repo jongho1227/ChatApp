@@ -3,7 +3,7 @@
     android:padding="10dp"
     android:shape="rectangle" >
 
-    <solid android:color="#74DC47" />
+    <solid android:color="@color/chat" />
 
     <stroke
         android:width="2px"
