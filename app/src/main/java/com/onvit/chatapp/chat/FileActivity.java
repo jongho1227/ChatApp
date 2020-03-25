@@ -1,5 +1,6 @@
 package com.onvit.chatapp.chat;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -49,11 +50,13 @@ public class FileActivity extends AppCompatActivity {
     private List<ChatModel.Comment> list = new ArrayList<>();
     private String uid;
     private String toRoom;
+    private Activity activity;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_file);
+        activity = FileActivity.this;
         toolbar = findViewById(R.id.toolbar);
         toolbar.setBackgroundResource(R.color.notice);
         setSupportActionBar(toolbar);
@@ -185,38 +188,44 @@ public class FileActivity extends AppCompatActivity {
                                     .getFile(file).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
                                 @Override
                                 public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                                    Utiles.customToast(FileActivity.this, "파일을 다운받았습니다.").show();
-                                    try {
-                                        Uri uri = FileProvider.getUriForFile(FileActivity.this, BuildConfig.APPLICATION_ID + ".fileprovider", file);
-                                        Intent intent = new Intent(Intent.ACTION_VIEW);
-                                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                                        if (ext.equals("hwp")) {
-                                            intent.setDataAndType(uri, "application/haansofthwp");
-                                        } else if (ext.contains("xls")) {
-                                            intent.setDataAndType(uri, "application/vnd.ms-excel");
-                                        } else {
-                                            intent.setDataAndType(uri, "application/*");
+                                    if(!activity.isDestroyed()){
+                                        try {
+                                            Uri uri = FileProvider.getUriForFile(FileActivity.this, BuildConfig.APPLICATION_ID + ".fileprovider", file);
+                                            Intent intent = new Intent(Intent.ACTION_VIEW);
+                                            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                            if (ext.equals("hwp")) {
+                                                intent.setDataAndType(uri, "application/haansofthwp");
+                                            } else if (ext.contains("xls")) {
+                                                intent.setDataAndType(uri, "application/vnd.ms-excel");
+                                            } else {
+                                                intent.setDataAndType(uri, "application/*");
+                                            }
+                                            startActivity(intent);
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                            Utiles.customToast(FileActivity.this, "설치된 뷰어가 없어 파일을 열 수 없습니다.").show();
                                         }
-                                        startActivity(intent);
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                        Utiles.customToast(FileActivity.this, "설치된 뷰어가 없어 파일을 열 수 없습니다.").show();
+                                        Utiles.customToast(FileActivity.this, "파일을 다운받았습니다.").show();
                                     }
                                 }
                             }).addOnFailureListener(new OnFailureListener() {
                                 @Override
                                 public void onFailure(@NonNull Exception e) {
-                                    Utiles.customToast(FileActivity.this, "파일을 받을 수 없습니다.").show();
+                                    if(!activity.isDestroyed()){
+                                        Utiles.customToast(FileActivity.this, "파일을 받을 수 없습니다.").show();
+                                    }
                                 }
                             });
                         }
 
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Utiles.customToast(FileActivity.this, "파일을 열 수 없습니다.").show();
+                        if(!activity.isDestroyed()){
+                            Utiles.customToast(FileActivity.this, "파일을 열 수 없습니다.").show();
+                        }
                     }
                 }
             });

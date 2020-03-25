@@ -30,7 +30,6 @@ import android.util.Log;
 import android.util.Patterns;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,13 +41,10 @@ import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -118,7 +114,7 @@ import jp.wasabeef.glide.transformations.GrayscaleTransformation;
 
 public class GroupMessageActivity extends AppCompatActivity implements View.OnClickListener {
 
-    public static Activity message;
+    public static Activity activity;
     private final int readMoreChatCount = 50;
     private final int firstReadChatCount = Utiles.firstReadChatCount;
     private int i = 0; // 첫 화면 들어갈때 스크롤 위치 맨 아래로 내리기위함.
@@ -152,7 +148,7 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_group_message);
-        message = GroupMessageActivity.this;
+        activity = GroupMessageActivity.this;
         FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
         uid = firebaseAuth.getCurrentUser().getUid();
         databaseReference = FirebaseDatabase.getInstance().getReference();
@@ -1631,38 +1627,44 @@ public class GroupMessageActivity extends AppCompatActivity implements View.OnCl
                                     .getFile(file).addOnSuccessListener(new OnSuccessListener<FileDownloadTask.TaskSnapshot>() {
                                 @Override
                                 public void onSuccess(FileDownloadTask.TaskSnapshot taskSnapshot) {
-                                    Utiles.customToast(GroupMessageActivity.this, "파일을 다운받았습니다.").show();
-                                    try {
-                                        Uri uri = FileProvider.getUriForFile(GroupMessageActivity.this, BuildConfig.APPLICATION_ID + ".fileprovider", file);
-                                        Intent intent = new Intent(Intent.ACTION_VIEW);
-                                        intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                        intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                                        if (ext.equals("hwp")) {
-                                            intent.setDataAndType(uri, "application/haansofthwp");
-                                        } else if (ext.contains("xls")) {
-                                            intent.setDataAndType(uri, "application/vnd.ms-excel");
-                                        } else {
-                                            intent.setDataAndType(uri, "application/*");
+                                    if(!activity.isDestroyed()){
+                                        Utiles.customToast(GroupMessageActivity.this, "파일을 다운받았습니다.").show();
+                                        try {
+                                            Uri uri = FileProvider.getUriForFile(GroupMessageActivity.this, BuildConfig.APPLICATION_ID + ".fileprovider", file);
+                                            Intent intent = new Intent(Intent.ACTION_VIEW);
+                                            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                                            intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                                            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                            if (ext.equals("hwp")) {
+                                                intent.setDataAndType(uri, "application/haansofthwp");
+                                            } else if (ext.contains("xls")) {
+                                                intent.setDataAndType(uri, "application/vnd.ms-excel");
+                                            } else {
+                                                intent.setDataAndType(uri, "application/*");
+                                            }
+                                            startActivity(intent);
+                                        } catch (Exception e) {
+                                            e.printStackTrace();
+                                            Utiles.customToast(GroupMessageActivity.this, "설치된 뷰어가 없어 파일을 열 수 없습니다.").show();
                                         }
-                                        startActivity(intent);
-                                    } catch (Exception e) {
-                                        e.printStackTrace();
-                                        Utiles.customToast(GroupMessageActivity.this, "설치된 뷰어가 없어 파일을 열 수 없습니다.").show();
                                     }
                                 }
                             }).addOnFailureListener(new OnFailureListener() {
                                 @Override
                                 public void onFailure(@NonNull Exception e) {
-                                    Utiles.customToast(GroupMessageActivity.this, "파일을 받을 수 없습니다.").show();
+                                    if(!activity.isDestroyed()){
+                                        Utiles.customToast(GroupMessageActivity.this, "파일을 받을 수 없습니다.").show();
+                                    }
                                 }
                             });
                         }
 
                     } catch (Exception e) {
                         e.printStackTrace();
-                        Utiles.customToast(GroupMessageActivity.this, "파일을 열 수 없습니다.").show();
+                        if(!activity.isDestroyed()){
+                            Utiles.customToast(GroupMessageActivity.this, "파일을 열 수 없습니다.").show();
+                        }
                     }
                 }
             });

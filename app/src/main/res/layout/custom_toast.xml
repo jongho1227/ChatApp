@@ -3,15 +3,18 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:padding="15dp"
     android:background="@drawable/toast_background"
     android:gravity="center_vertical"
     android:orientation="horizontal">
 
-    <ImageView
+    <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/logo_toast"
         android:layout_width="30dp"
-        android:layout_height="30dp"/>
+        android:layout_height="30dp"
+        app:civ_border_width="1dp"
+        app:civ_border_color="@color/white"/>
 
     <TextView
         android:id="@+id/message_toast"

@@ -7,6 +7,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.FileProvider;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -49,13 +50,14 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
     private ArrayList<Img> imgList = new ArrayList<>();
     private ArrayList<String> namelist = new ArrayList<>();
     private  ActionBar actionBar;
+    private Activity activity;
     int c = 0;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_big_picture);
-
+        activity = BigPictureActivity.this;
         chatToolbar = findViewById(R.id.chat_toolbar);
         chatToolbar.setBackgroundResource(R.color.black);
         setSupportActionBar(chatToolbar);
@@ -198,24 +200,42 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
                 requestPermissions(permission, WRITE_EXTERNAL_STORAGE_CODE);
             }
         }
-        Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
-        String time = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.KOREA).format(System.currentTimeMillis());
-        File path = Environment.getExternalStorageDirectory();
-        File dir = new File(path + "/KCHA/DownloadImg");
-        dir.mkdirs();
-        String imagename = time + ".PNG";
-        File file = new File(dir, imagename);
-        OutputStream out;
-        try {
-            out = new FileOutputStream(file);
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-            out.flush();
-            out.close();
-            Utiles.customToast(BigPictureActivity.this, "사진이 저장되었습니다.").show();
-            BigPictureActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
-        } catch (Exception e) {
-            Utiles.customToast(BigPictureActivity.this, e.getMessage()).show();
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
+                String time = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.KOREA).format(System.currentTimeMillis());
+                File path = Environment.getExternalStorageDirectory();
+                File dir = new File(path + "/KCHA/DownloadImg");
+                dir.mkdirs();
+                String imagename = time + ".PNG";
+                File file = new File(dir, imagename);
+                OutputStream out;
+                try {
+                    out = new FileOutputStream(file);
+                    bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
+                    out.flush();
+                    out.close();
+//            Snackbar.make(layoutPicture,"사진이 저장되었습니다.",Snackbar.LENGTH_SHORT).setAction("닫기", new View.OnClickListener() {
+//                @Override
+//                public void onClick(View view) {
+//                }
+//            }).show();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(!activity.isDestroyed()){
+                                Utiles.customToast(BigPictureActivity.this, "사진이 저장되었습니다.").show();
+                            }
+                        }
+                    });
+                    BigPictureActivity.this.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.fromFile(file)));
+                } catch (Exception e) {
+                    Utiles.customToast(BigPictureActivity.this, e.getMessage()).show();
+                }
+            }
+        }).start();
+
     }
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {

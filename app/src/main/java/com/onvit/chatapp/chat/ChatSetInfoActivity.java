@@ -279,7 +279,7 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                                                                     comment.existUser = existUserGroupChat;
                                                                     FirebaseDatabase.getInstance().getReference().child("groupChat").child(toRoom).child("comments").push().setValue(comment);
                                                                 }
-                                                                GroupMessageActivity g = (GroupMessageActivity) GroupMessageActivity.message;
+                                                                GroupMessageActivity g = (GroupMessageActivity) GroupMessageActivity.activity;
                                                                 g.getIntent().putExtra("on", "on");
                                                                 g.getIntent().putExtra("out", "out");
                                                                 getIntent().putExtra("on", "on");
