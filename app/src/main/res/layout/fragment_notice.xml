@@ -6,9 +6,16 @@
     android:orientation="vertical"
     android:background="@color/white">
 
-    <include
+    <androidx.appcompat.widget.Toolbar
         android:id="@+id/chat_toolbar"
-        layout="@layout/app_bar_layout"/>
+        android:background="@color/white"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:titleTextColor="@color/black"
+        android:layout_marginBottom="10dp"
+        android:theme="@style/AppTheme.actionBar">
+    </androidx.appcompat.widget.Toolbar>
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/fragment_notice_recycler"
         android:layout_width="match_parent"

@@ -1,8 +1,8 @@
 package com.onvit.chatapp.chat;
 
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.Context;
+import androidx.appcompat.app.AlertDialog;
+
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
@@ -19,6 +19,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -39,6 +40,7 @@ import com.onvit.chatapp.model.ChatModel;
 import com.onvit.chatapp.model.User;
 import com.onvit.chatapp.model.Vote;
 import com.onvit.chatapp.util.UserMap;
+import com.onvit.chatapp.util.Utiles;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -49,7 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ChatSetInfoActivity extends Activity implements View.OnClickListener {
+public class ChatSetInfoActivity extends AppCompatActivity implements View.OnClickListener {
     LinearLayout chat_info_linear_layout;
     RecyclerView recyclerView;
     TextView vote, file, img, plus, out;
@@ -80,25 +82,15 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
         messageReadUsers = (Map<String, Object>) getIntent().getSerializableExtra("readUser");
         existUserGroupChat = (Map<String, Object>) getIntent().getSerializableExtra("existUser");
         users = UserMap.getInstance();
+
+
         WindowManager.LayoutParams wmlp = getWindow().getAttributes();
         wmlp.gravity = Gravity.TOP | Gravity.END;
 
-        DisplayMetrics metrics = new DisplayMetrics();
-        WindowManager windowManager = (WindowManager) getApplicationContext().getSystemService(Context.WINDOW_SERVICE);
-        windowManager.getDefaultDisplay().getMetrics(metrics);
 
-
-        int width, height;
-
-        width = metrics.widthPixels;
-        height = metrics.heightPixels;
-
-        int resourceId = getResources().getIdentifier("navigation_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            height -= getResources().getDimensionPixelSize(resourceId) / 2;
-        }
-        chat_info_linear_layout.getLayoutParams().width = (int) (width * 0.75);
-        chat_info_linear_layout.getLayoutParams().height = height;
+        DisplayMetrics dm = getApplicationContext().getResources().getDisplayMetrics();
+        int width = (int) (dm.widthPixels * 0.7); // Display 사이즈의 90%
+        getWindow().getAttributes().width = width;
 
         this.setFinishOnTouchOutside(true);
 
@@ -183,30 +175,11 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                 break;
             case R.id.out:
                 AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                View out = LayoutInflater.from(ChatSetInfoActivity.this).inflate(R.layout.out_group_chat, null);
-                builder.setView(out);
-                final AlertDialog dialog = builder.create();
-                dialog.show();
-                TextView cancel = out.findViewById(R.id.cancel);
-                TextView outRoom = out.findViewById(R.id.out);
-                cancel.setOnClickListener(new View.OnClickListener() {
+                builder.setTitle("채팅방의 모든 내용이 삭제됩니다.\n정말 나가시겠습니까?");
+                builder.setPositiveButton("예", new DialogInterface.OnClickListener() {
                     @Override
-                    public void onClick(View view) {
-                        dialog.dismiss();
-                    }
-                });
-                outRoom.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(ChatSetInfoActivity.this);
-                        View v = LayoutInflater.from(ChatSetInfoActivity.this).inflate(R.layout.loading, null);
-                        TextView tx = v.findViewById(R.id.loading_text);
-                        tx.setText("채팅내역을 삭제하는 중입니다.");
-                        builder.setView(v);
-                        AlertDialog d = builder.create();
-                        d.setCanceledOnTouchOutside(false);
-                        d.setCancelable(false);
-                        d.show();
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        AlertDialog d = Utiles.createLoadingDialog(ChatSetInfoActivity.this,"채팅내역을 삭제하는 중입니다.");
                         final Map<String, Object> map = new HashMap<>();
                         final Map<String, Object> map2 = new HashMap<>();
                         final Map<String, Object> voteMap = new HashMap<>();
@@ -314,7 +287,9 @@ public class ChatSetInfoActivity extends Activity implements View.OnClickListene
                                     }
                                 });
                     }
-                });
+                }).setNegativeButton("아니오", null);
+                AlertDialog a = builder.create();
+                a.show();
                 break;
         }
     }

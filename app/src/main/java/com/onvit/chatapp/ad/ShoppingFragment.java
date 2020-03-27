@@ -92,10 +92,18 @@ public class ShoppingFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull CustomViewHolder holder, final int position) {
             final String item = advertisement.get(position).getThumbnail();
-            Glide.with(getActivity()).load(item).placeholder(R.drawable.ic_shopping).apply(new RequestOptions().centerCrop()).into(holder.imageView);
+            Glide.with(getActivity()).load(item).placeholder(R.drawable.ic_shopping).override(180,180).into(holder.imageView);
             Animation animation = AnimationUtils.loadAnimation(getContext(), R.anim.blink_animation);
             holder.content.startAnimation(animation);
-            holder.itemView.setOnClickListener(new View.OnClickListener() {
+            holder.content.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent intent = new Intent(getContext(), ADActivity.class);
+                    intent.putExtra("ad", advertisement.get(position).getOriginal());
+                    startActivity(intent);
+                }
+            });
+            holder.imageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     Intent intent = new Intent(getContext(), ADActivity.class);
@@ -124,22 +132,3 @@ public class ShoppingFragment extends Fragment {
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

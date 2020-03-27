@@ -48,11 +48,13 @@ public class VoteActivity extends AppCompatActivity {
     private SimpleDateFormat changeDateFormat = new SimpleDateFormat("yyyy년 MM월 dd일 E요일", Locale.KOREA);
     private String flag;
     private ImageView back;
+    private ValueEventListener voteListener;
     ArrayList<User> userList;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_vote);
+
         databaseReference = FirebaseDatabase.getInstance().getReference();
         toRoom = getIntent().getStringExtra("room");
         vote_key = getIntent().getStringExtra("key");
@@ -60,7 +62,7 @@ public class VoteActivity extends AppCompatActivity {
         flag = getIntent().getStringExtra("flag");
         back = findViewById(R.id.back_arrow);
         userList = getIntent().getParcelableArrayListExtra("userList");
-        databaseReference.child("Vote").child(toRoom).child(vote_key).addListenerForSingleValueEvent(new ValueEventListener() {
+        voteListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull final DataSnapshot dataSnapshot) {
                 Vote vote = dataSnapshot.getValue(Vote.class);
@@ -70,8 +72,9 @@ public class VoteActivity extends AppCompatActivity {
                 TextView detail = findViewById(R.id.detail);
                 final Date d = new Date(vote.getDeadline());
                 deadline.setText(changeDateFormat.format(d));
-                textView.setText(vote.getTitle());
+                textView.setText("Q. "+vote.getTitle());
                 LinearLayout vote_layout = findViewById(R.id.toggle_group);
+                vote_layout.removeAllViews();
                 final LayoutInflater layoutInflater = (LayoutInflater) getSystemService(LAYOUT_INFLATER_SERVICE);
 
                 Map<String, Object> get = vote.getContent();
@@ -161,7 +164,6 @@ public class VoteActivity extends AppCompatActivity {
                                 public void onClick(DialogInterface dialogInterface, int i) {
                                     databaseReference.child("Vote").child(toRoom).child(vote_key).child("content").updateChildren(update);
                                     Utiles.customToast(VoteActivity.this, "투표를 하였습니다.").show();
-                                    finish();
                                 }
                             }).setNegativeButton("아니요", new DialogInterface.OnClickListener() {
                                 @Override
@@ -179,7 +181,8 @@ public class VoteActivity extends AppCompatActivity {
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
             }
-        });
+        };
+        databaseReference.child("Vote").child(toRoom).child(vote_key).addValueEventListener(voteListener);
 
         back.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -190,8 +193,16 @@ public class VoteActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(voteListener!=null){
+            databaseReference.child("Vote").child(toRoom).child(vote_key).removeEventListener(voteListener);
+        }
+    }
+
+    @Override
     public void onBackPressed() {
         finish();
-        overridePendingTransition(R.anim.fromright, R.anim.toleft);//화면 사라지는 방향
+        overridePendingTransition(R.anim.fromtop, R.anim.tobottom);//화면 사라지는 방향
     }
 }

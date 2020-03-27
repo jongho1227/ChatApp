@@ -18,6 +18,7 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -158,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void requestPermission() {
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
-        ArrayList<String> arrayPermission = new ArrayList<>();
+        final ArrayList<String> arrayPermission = new ArrayList<>();
 
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             arrayPermission.add(Manifest.permission.READ_EXTERNAL_STORAGE);
@@ -169,10 +170,29 @@ public class MainActivity extends AppCompatActivity {
             arrayPermission.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
 
+        permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            arrayPermission.add(Manifest.permission.CAMERA);
+        }
         if (arrayPermission.size() > 0) {
-            String[] strArray = new String[arrayPermission.size()];
-            strArray = arrayPermission.toArray(strArray);
-            ActivityCompat.requestPermissions(this, strArray, PERMISSION_REQUEST_CODE);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            LayoutInflater inflater = getLayoutInflater();
+            View request = inflater.inflate(R.layout.request_permission_check, null);
+            Button button = request.findViewById(R.id.ok);
+            builder.setView(request);
+            final AlertDialog a = builder.create();
+            a.setCanceledOnTouchOutside(false);
+            a.setCancelable(false);
+            a.show();
+            button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    a.dismiss();
+                    String[] strArray = new String[arrayPermission.size()];
+                    strArray = arrayPermission.toArray(strArray);
+                    ActivityCompat.requestPermissions(MainActivity.this, strArray, PERMISSION_REQUEST_CODE);
+                }
+            });
         }
     }
 
@@ -330,17 +350,27 @@ public class MainActivity extends AppCompatActivity {
         super.onOptionsItemSelected(item);
 
         if (item.getItemId() == R.id.logout) {
-            String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-            Map<String, Object> map = new HashMap<>();
-            map.put("pushToken", "");
-            FirebaseDatabase.getInstance().getReference().child("Users").child(uid).updateChildren(map);
-            NotificationManagerCompat.from(this).cancelAll();
-            UserMap.clearApp();
-            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-            intent.putExtra("logOut", "logOut");
-            PreferenceManager.clear(this);
-            startActivity(intent);
-            finish();
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("대한지역병원협의회");
+            builder.setMessage("로그아웃을 하시겠습니까?");
+            builder.setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("pushToken", "");
+                    FirebaseDatabase.getInstance().getReference().child("Users").child(uid).updateChildren(map);
+                    NotificationManagerCompat.from(MainActivity.this).cancelAll();
+                    UserMap.clearApp();
+                    Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                    intent.putExtra("logOut", "logOut");
+                    PreferenceManager.clear(MainActivity.this);
+                    startActivity(intent);
+                    finish();
+                }
+            }).setNegativeButton("취소",null);
+            AlertDialog a = builder.create();
+            a.show();
         } else if (item.getItemId() == R.id.admin) {
             Intent intent = new Intent(MainActivity.this, AdminActivity.class);
             startActivity(intent);

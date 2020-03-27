@@ -167,7 +167,7 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
         Bitmap bitmap = ((BitmapDrawable) img.getDrawable()).getBitmap();
         String time = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.KOREA).format(System.currentTimeMillis());
         String imagename = time + ".PNG";
-        File path = getFilesDir();
+        File path = getCacheDir();
         File file = new File(path, imagename);
         OutputStream out;
         try {
@@ -186,6 +186,9 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
             shareIntent.putExtra(Intent.EXTRA_STREAM, uri);
             shareIntent.setType("image/*");
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            if (file.exists()) {
+                file.deleteOnExit();
+            }
             startActivity(Intent.createChooser(shareIntent, "친구에게 공유하기"));
 
         } catch (Exception e) {

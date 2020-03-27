@@ -29,7 +29,9 @@
             android:textColor="@color/black"
             android:textStyle="bold"
             android:gravity="end"
-            android:padding="10dp"/>
+            android:padding="10dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"/>
     </LinearLayout>
 
     <ScrollView
@@ -46,12 +48,11 @@
                 android:id="@+id/vote_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="18dp"
+                android:textSize="25dp"
                 android:textColor="@color/black"
                 android:textStyle="bold"
-                android:layout_marginBottom="15dp"
+                android:layout_marginBottom="10dp"
                 android:hint="투표 제목"/>
-
             <LinearLayout
                 android:id="@+id/toggle_group"
                 android:layout_width="match_parent"
@@ -63,7 +64,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="마감기간"
-                android:textSize="15dp"
+                android:textSize="20dp"
                 android:layout_marginTop="10dp"
                 android:textColor="@color/black"
                 android:textStyle="bold"/>
@@ -75,19 +76,65 @@
                 android:drawableEnd="@drawable/ic_timer_black_24dp"
                 android:drawablePadding="5dp"
                 android:padding="10dp"
-                android:textSize="20dp"
+                android:textSize="22dp"
                 android:hint="마감기간"/>
             <TextView
                 android:id="@+id/detail"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="18dp"
+                android:textSize="22dp"
                 android:textColor="@color/black"
                 android:drawableEnd="@drawable/ic_keyboard_arrow_right_black_24dp"
                 android:gravity="center_vertical"
                 android:textStyle="bold"
-                android:layout_marginBottom="15dp"
-                android:hint="투표 상세보기"/>
+                android:layout_marginBottom="40dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:text="투표 현황 보기"/>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="10dp"
+                android:background="@drawable/radius_file">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="20dp"
+                    android:layout_marginBottom="5dp"
+                    android:text="투표 가이드"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textSize="18dp"
+                    android:layout_marginBottom="5dp"
+                    android:text="■ 기본적으로 복수의 항목을 선택할 수 있습니다."/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textSize="18dp"
+                    android:text="■ 투표는 최근 투표한 항목이 반영됩니다."/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="15dp"
+                    android:layout_marginBottom="5dp"
+                    android:text="ex) 1번 항목을 투표 후 다시 2번항목을 투표하면 2번으로 반영"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:textSize="18dp"
+                    android:text="■ 아무것도 선택안하고 투표할 시 투표기록 초기화"/>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="15dp"
+                    android:layout_marginBottom="5dp"
+                    android:text="ex) 1번 항목을 투표 후 아무것도 선택안하고 투표하면 1번 항목 투표기록 초기화"/>
+            </LinearLayout>
         </LinearLayout>
     </ScrollView>
 </LinearLayout>

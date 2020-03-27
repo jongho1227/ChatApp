@@ -5,13 +5,9 @@
     android:layout_height="100dp"
     android:layout_marginTop="10dp"
     android:orientation="horizontal"
-    android:background="@color/white">
-    <CheckBox
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/frienditem_checkbox"
-        android:layout_gravity="center_vertical"
-        android:layout_marginLeft="20dp"/>
+    android:paddingEnd="10dp"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true">
     <ImageView
         android:id="@+id/chatitem_imageview"
         android:layout_width="80dp"
@@ -20,8 +16,9 @@
         android:src="@drawable/kcha_logo" />
 
     <RelativeLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
+        android:layout_weight="0.9"
         android:gravity="center_vertical"
         android:orientation="vertical">
 
@@ -95,5 +92,10 @@
             android:visibility="invisible"
             tools:text="안읽은숫자" />
     </RelativeLayout>
-
+    <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/frienditem_checkbox"
+        android:layout_gravity="center_vertical"
+        android:layout_marginLeft="10dp"/>
 </LinearLayout>

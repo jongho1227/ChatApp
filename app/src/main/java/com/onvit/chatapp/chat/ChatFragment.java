@@ -3,16 +3,15 @@ package com.onvit.chatapp.chat;
 import android.app.ActivityOptions;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.GradientDrawable;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.os.Vibrator;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import androidx.annotation.NonNull;
@@ -52,6 +51,7 @@ import java.util.Objects;
 import java.util.TimeZone;
 
 public class ChatFragment extends Fragment {
+    private final int firstReadChatCount = Utiles.firstReadChatCount;
     private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference();
     private SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM월dd일");
     private SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
@@ -62,12 +62,12 @@ public class ChatFragment extends Fragment {
     private String uid;// 클라이언트uid
     private ToggleButton btn;
     private FloatingActionButton creatChat;
-    private final int firstReadChatCount = Utiles.firstReadChatCount;
     private List<ChatModel.Comment> newComments = new ArrayList<>();
     private List<Img> img_list = new ArrayList<>();
     private AlertDialog dialog;
     private Map<String, User> users = new HashMap<>();
     private ValueEventListener valueEventListener;
+
     public ChatFragment() {
     }
 
@@ -87,9 +87,10 @@ public class ChatFragment extends Fragment {
         creatChat.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent intent = new Intent(getActivity(),SelectPeopleActivity.class);
-                intent.putExtra("uid",uid);
-                startActivity(intent);
+                Intent intent = new Intent(getActivity(), SelectPeopleActivity.class);
+                intent.putExtra("uid", uid);
+                ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(view.getContext(), R.anim.fromleft, R.anim.toright);
+                startActivity(intent, activityOptions.toBundle());
             }
         });
         UserMap.setComments(newComments);
@@ -99,11 +100,13 @@ public class ChatFragment extends Fragment {
                 if (btn.isChecked()) {
                     btn.setBackgroundDrawable(getResources().getDrawable(R.drawable.ic_notifications_vibrate));
                     activity.getSharedPreferences(activity.getPackageName(), Context.MODE_PRIVATE).edit().putInt("vibrate", 0).apply();
-                    Utiles.customToast(getActivity(),"앱의 알림이 설정되었습니다.").show();
+                    Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+                    vibrator.vibrate(700);
+                    Utiles.customToast(getActivity(), "앱의 알림이 설정되었습니다.").show();
                 } else {
                     btn.setBackgroundDrawable(getResources().getDrawable(R.drawable.ic_notifications_no_vibrate));
                     activity.getSharedPreferences(activity.getPackageName(), Context.MODE_PRIVATE).edit().putInt("vibrate", 1).apply();
-                    Utiles.customToast(getActivity(),"앱의 알림이 해제되었습니다.").show();
+                    Utiles.customToast(getActivity(), "앱의 알림이 해제되었습니다.").show();
                 }
             }
         });
@@ -125,6 +128,7 @@ public class ChatFragment extends Fragment {
                 Collections.sort(chatModels);
                 chatRecyclerViewAdapter.notifyDataSetChanged();
             }
+
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
 
@@ -148,6 +152,18 @@ public class ChatFragment extends Fragment {
         }
     }
 
+    private void goChatRoom(String toRoom) {
+        Intent  intent = new Intent(getActivity(), GroupMessageActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.putExtra("toRoom", toRoom); // 방이름
+        intent.putExtra("chatCount", newComments.size());// 채팅숫자
+        UserMap.setComments(newComments);
+        intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
+        ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(getActivity(), R.anim.frombottom, R.anim.totop);
+        startActivity(intent, activityOptions.toBundle());
+        dialog.dismiss();
+    }
+
     class ChatRecyclerViewAdapter extends RecyclerView.Adapter<ChatRecyclerViewAdapter.ChatViewHolder> {
         public ChatRecyclerViewAdapter() {
 
@@ -165,20 +181,16 @@ public class ChatFragment extends Fragment {
             //position0번 부터 붙음
 
             holder.textView_count.setVisibility(View.INVISIBLE);
-            GradientDrawable gradientDrawable = (GradientDrawable) getContext().getDrawable(R.drawable.radius);
-            holder.imageView.setBackground(gradientDrawable);
-            holder.imageView.setClipToOutline(true);
-
 
             holder.textView_title.setText(chatModels.get(position).getChatName());
 
-            holder.textView_user_count.setText(chatModels.get(position).getExistUsers().size()+"");
+            holder.textView_user_count.setText(chatModels.get(position).getExistUsers().size() + "");
             //마지막으로 보낸 메세지
 
             String lastChat = chatModels.get(position).getLastChat();
             holder.textView_last_message.setText(lastChat);
             //보낸 시간
-            if (chatModels.get(position).getTimestamp()==0) {
+            if (chatModels.get(position).getTimestamp() == 0) {
                 holder.textView_timestamp.setVisibility(View.INVISIBLE);
                 holder.textView_timestamp2.setVisibility(View.INVISIBLE);
             } else {
@@ -209,8 +221,8 @@ public class ChatFragment extends Fragment {
             }
 
             //안읽은 메세지 숫자
-            if (chatModels.get(position).getUsers().get(uid)!=0) {
-                holder.textView_count.setText(chatModels.get(position).getUsers().get(uid)+"");
+            if (chatModels.get(position).getUsers().get(uid) != 0) {
+                holder.textView_count.setText(chatModels.get(position).getUsers().get(uid) + "");
                 holder.textView_count.setVisibility(View.VISIBLE);
             }
 
@@ -227,9 +239,9 @@ public class ChatFragment extends Fragment {
                     dialog.setCanceledOnTouchOutside(false);
                     dialog.setCancelable(false);
                     dialog.show();
-                    if(chatModels.get(position).getChatName().equals("회원채팅방")){
+                    if (chatModels.get(position).getChatName().equals("회원채팅방")) {
                         chatModels.get(position).setChatName("normalChat");
-                    }else if(chatModels.get(position).getChatName().equals("임원채팅방")){
+                    } else if (chatModels.get(position).getChatName().equals("임원채팅방")) {
                         chatModels.get(position).setChatName("officerChat");
                     }
                     new getMessage().execute(chatModels.get(position).getChatName());
@@ -266,20 +278,6 @@ public class ChatFragment extends Fragment {
         }
     }
 
-    private void goChatRoom(String toRoom) {
-        Intent intent = null;
-        intent = new Intent(getActivity(), GroupMessageActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        intent.putExtra("toRoom", toRoom); // 방이름
-        intent.putExtra("chatCount", newComments.size());// 채팅숫자
-        UserMap.setComments(newComments);
-        intent.putParcelableArrayListExtra("imgList", (ArrayList<? extends Parcelable>) img_list);
-        ActivityOptions activityOptions = ActivityOptions.makeCustomAnimation(getActivity(), R.anim.frombottom, R.anim.totop);
-        startActivity(intent, activityOptions.toBundle());
-        dialog.dismiss();
-    }
-
-
     private class getMessage extends AsyncTask<String, Void, Void> {
         @Override
         protected Void doInBackground(final String... strings) {
@@ -288,9 +286,9 @@ public class ChatFragment extends Fragment {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                             Map<String, Object> map = new HashMap<>();
-                            if(dataSnapshot.getChildrenCount()>0){
+                            if (dataSnapshot.getChildrenCount() > 0) {
                                 for (DataSnapshot item : dataSnapshot.getChildren()) {
-                                    map.put(Objects.requireNonNull(item.getKey())+"/readUsers/"+uid, true);
+                                    map.put(Objects.requireNonNull(item.getKey()) + "/readUsers/" + uid, true);
                                 }
                                 databaseReference.child("groupChat").child(strings[0]).child("comments").updateChildren(map);
                             }
@@ -305,7 +303,7 @@ public class ChatFragment extends Fragment {
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
                         public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                            for(DataSnapshot i : dataSnapshot.getChildren()){
+                            for (DataSnapshot i : dataSnapshot.getChildren()) {
                                 ChatModel.Comment c = i.getValue(ChatModel.Comment.class);
                                 c.readUsers.put(uid, true);
                                 c.setKey(i.getKey());
@@ -337,6 +335,7 @@ public class ChatFragment extends Fragment {
                             databaseReference.child("lastChat").child(strings[0]).child("users").updateChildren(map);
                             goChatRoom(strings[0]);
                         }
+
                         @Override
                         public void onCancelled(@NonNull DatabaseError databaseError) {
 

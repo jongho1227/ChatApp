@@ -221,9 +221,7 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
 
         @Override
         public void onBindViewHolder(@NonNull final NoticeActivity2.NoticeActivityRecyclerAdapter2.NoticeViewHolder2 holder, final int position) {
-            Log.d("이미지", position + "");
-
-            holder.text.setText("클릭하여 확대");
+            Glide.with(NoticeActivity2.this).load(R.drawable.ic_zoom_in_black_24dp).into(holder.cancel_view);
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
@@ -240,6 +238,7 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
             GradientDrawable gradientDrawable = (GradientDrawable) NoticeActivity2.this.getDrawable(R.drawable.radius);
             holder.imageView.setBackground(gradientDrawable);
             holder.imageView.setClipToOutline(true);
+            holder.cancel_view.bringToFront();
         }
 
         @Override
@@ -249,13 +248,12 @@ public class NoticeActivity2 extends AppCompatActivity implements View.OnClickLi
 
 
         private class NoticeViewHolder2 extends RecyclerView.ViewHolder {
-            private TextView text;
-            private ImageView imageView;
+            private ImageView imageView,cancel_view;
 
             NoticeViewHolder2(View itemView) {
                 super(itemView);
-                text = itemView.findViewById(R.id.layout_img_text);
                 imageView = itemView.findViewById(R.id.info_img);
+                cancel_view = itemView.findViewById(R.id.cancel_view);
 
             }
         }

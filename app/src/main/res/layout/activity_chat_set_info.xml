@@ -8,6 +8,7 @@
     android:orientation="vertical"
     android:padding="10dp"
     tools:context=".chat.ChatSetInfoActivity">
+
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -16,6 +17,7 @@
         android:textColor="@color/black"
         android:textSize="20dp"
         android:textStyle="bold" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -28,6 +30,8 @@
             android:id="@+id/file"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
             android:drawableLeft="@drawable/folder"
             android:drawablePadding="8dp"
             android:letterSpacing="0.2"
@@ -40,6 +44,8 @@
             android:id="@+id/img"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
             android:drawableLeft="@drawable/picture"
             android:drawablePadding="8dp"
             android:letterSpacing="0.2"
@@ -47,19 +53,22 @@
             android:text="사진"
             android:textColor="@color/black"
             android:textSize="16dp" />
+
         <TextView
             android:id="@+id/vote"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
             android:drawableLeft="@drawable/vote"
             android:drawablePadding="8dp"
+            android:gravity="center_vertical"
             android:letterSpacing="0.2"
             android:padding="8dp"
             android:text="투표"
-            android:gravity="center_vertical"
             android:textColor="@color/black"
             android:textSize="16dp"
-            android:visibility="gone"/>
+            android:visibility="gone" />
     </LinearLayout>
 
     <RelativeLayout
@@ -70,31 +79,36 @@
             android:id="@+id/plus_ps"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:drawableRight="@drawable/ic_add_circle_black_24dp"
             android:paddingStart="10dp"
             android:text="대화멤버"
-            android:drawableRight="@drawable/ic_add_circle_black_24dp"
             android:textColor="@color/black"
             android:textSize="20dp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:clickable="true"
+            android:background="?attr/selectableItemBackground"/>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/peopleinfo_recyclerview"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="5dp"
-            android:paddingStart="5dp"
+            android:layout_above="@+id/out"
             android:layout_below="@+id/plus_ps"
-            android:layout_above="@+id/out"/>
+            android:layout_marginTop="5dp"
+            android:paddingStart="5dp" />
+
         <TextView
             android:id="@+id/out"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="나가기"
-            android:padding="10dp"
-            android:textSize="20dp"
-            android:textColor="@color/black"
-            android:textStyle="bold"
             android:layout_alignParentEnd="true"
-            android:layout_alignParentBottom="true"/>
+            android:layout_alignParentBottom="true"
+            android:padding="10dp"
+            android:text="나가기"
+            android:textColor="@color/black"
+            android:textSize="20dp"
+            android:textStyle="bold"
+            android:clickable="true"
+            android:background="?attr/selectableItemBackground"/>
     </RelativeLayout>
 </LinearLayout>

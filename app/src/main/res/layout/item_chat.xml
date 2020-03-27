@@ -6,14 +6,14 @@
     android:layout_marginTop="10dp"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:background="@color/white">
-
-    <ImageView
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true">
+    <de.hdodenhof.circleimageview.CircleImageView
         android:id="@+id/chatitem_imageview"
         android:layout_width="80dp"
-        android:layout_height="60dp"
+        android:layout_height="90dp"
         android:layout_margin="10dp"
-        android:src="@drawable/kcha_logo" />
+        android:src="@drawable/logo_high" />
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -76,7 +76,6 @@
             android:textColor="@android:color/darker_gray"
             android:textSize="16dp"
             tools:text="11:11" />
-
         <TextView
             android:id="@+id/chatitem_textview_count"
             android:layout_width="wrap_content"
@@ -91,5 +90,4 @@
             android:visibility="invisible"
             tools:text="안읽은숫자" />
     </RelativeLayout>
-
 </LinearLayout>

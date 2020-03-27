@@ -160,7 +160,7 @@ public class SelectGroupChatActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onBindViewHolder(@NonNull CustomViewHolder holder, final int position) {
+        public void onBindViewHolder(@NonNull final CustomViewHolder holder, final int position) {
             //position0번 부터 붙음
 
             holder.textView_count.setVisibility(View.INVISIBLE);
@@ -212,23 +212,32 @@ public class SelectGroupChatActivity extends AppCompatActivity {
                 holder.textView_count.setText(chatModels.get(position).getUsers().get(uid)+"");
                 holder.textView_count.setVisibility(View.VISIBLE);
             }
-
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    holder.checkBox.setChecked(true);
+                }
+            });
             holder.checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                     if (b) {
-                        AlertDialog.Builder builder = new AlertDialog.Builder(SelectGroupChatActivity.this);
-                        View noticeView = getLayoutInflater().from(SelectGroupChatActivity.this).inflate(R.layout.access, null);
-                        builder.setView(noticeView);
-                        dialog = builder.create();
-                        dialog.setCanceledOnTouchOutside(false);
-                        dialog.setCancelable(false);
-                        dialog.show();
-                        UserMap.clearComments();
-                        new getMessage().execute(chatModels.get(position).getChatName());
+                        enterRoom(position);
                     }
                 }
             });
+        }
+
+        private void enterRoom(int position) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(SelectGroupChatActivity.this);
+            View noticeView = getLayoutInflater().from(SelectGroupChatActivity.this).inflate(R.layout.access, null);
+            builder.setView(noticeView);
+            dialog = builder.create();
+            dialog.setCanceledOnTouchOutside(false);
+            dialog.setCancelable(false);
+            dialog.show();
+            UserMap.clearComments();
+            new getMessage().execute(chatModels.get(position).getChatName());
         }
 
         @Override

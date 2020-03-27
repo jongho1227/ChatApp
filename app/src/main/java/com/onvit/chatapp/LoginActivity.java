@@ -9,6 +9,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
@@ -72,7 +73,6 @@ public class LoginActivity extends AppCompatActivity {
         login = findViewById(R.id.loginactivity_button_login);
         signup = findViewById(R.id.loginactivity_button_signup);
         search = findViewById(R.id.loginactivity_button_search);
-        requestPermission();
         password.setImeOptions(EditorInfo.IME_ACTION_DONE);
         password.setOnEditorActionListener(new TextView.OnEditorActionListener() { // 완료눌러도 회원가입기능되게~
             @Override
@@ -151,6 +151,7 @@ public class LoginActivity extends AppCompatActivity {
                 }
             }
         };
+        requestPermission();
     }
     void loginEvent() {
         if (id.getText().toString() == null || id.getText().toString().equals("") || password.getText().toString() == null || password.getText().toString().equals("")) {
@@ -198,7 +199,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private void requestPermission() {
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE);
-        ArrayList<String> arrayPermission = new ArrayList<>();
+        final ArrayList<String> arrayPermission = new ArrayList<>();
 
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             arrayPermission.add(Manifest.permission.READ_EXTERNAL_STORAGE);
@@ -208,10 +209,29 @@ public class LoginActivity extends AppCompatActivity {
         if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
             arrayPermission.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
         }
+        permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            arrayPermission.add(Manifest.permission.CAMERA);
+        }
         if (arrayPermission.size() > 0) {
-            String[] strArray = new String[arrayPermission.size()];
-            strArray = arrayPermission.toArray(strArray);
-            ActivityCompat.requestPermissions(this, strArray, PERMISSION_REQUEST_CODE);
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            LayoutInflater inflater = getLayoutInflater();
+            View request = inflater.inflate(R.layout.request_permission_check, null);
+            Button button = request.findViewById(R.id.ok);
+            builder.setView(request);
+            final AlertDialog a = builder.create();
+            a.setCanceledOnTouchOutside(false);
+            a.setCancelable(false);
+            a.show();
+            button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    a.dismiss();
+                    String[] strArray = new String[arrayPermission.size()];
+                    strArray = arrayPermission.toArray(strArray);
+                    ActivityCompat.requestPermissions(LoginActivity.this, strArray, PERMISSION_REQUEST_CODE);
+                }
+            });
         }
     }
 

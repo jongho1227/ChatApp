@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -40,11 +41,12 @@ public class VoteListActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     List<Vote> voteList = new ArrayList<>();
     ArrayList<User> userList;
+    private LinearLayout noVoteLayout;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_vote_list);
-
+        noVoteLayout = findViewById(R.id.no_vote_layout);
         toolbar = findViewById(R.id.chat_toolbar);
         toolbar.setBackgroundResource(R.color.notice);
         setSupportActionBar(toolbar);
@@ -95,6 +97,9 @@ public class VoteListActivity extends AppCompatActivity {
                     Vote v = i.getValue(Vote.class);
                     v.setKey(i.getKey());
                     voteList.add(v);
+                }
+                if(voteList.size()==0){
+                    noVoteLayout.setVisibility(View.VISIBLE);
                 }
                 recyclerView = findViewById(R.id.vote_recycler);
                 recyclerView.setLayoutManager(new LinearLayoutManager(VoteListActivity.this));
@@ -186,10 +191,8 @@ public class VoteListActivity extends AppCompatActivity {
             String join;
             if(flag==0){
                 join = size.size()+"명 참여 / 참여안함";
-                holder.pCount.setCompoundDrawablesWithIntrinsicBounds( 0, 0, R.drawable.ic_close_black_24dp, 0);
             }else{
                 join = size.size()+"명 참여 / 참여완료";
-                holder.pCount.setCompoundDrawablesWithIntrinsicBounds( 0, 0, R.drawable.ic_panorama_fish_eye_black_24dp, 0);
             }
             holder.pCount.setText(join);
             holder.time.setText(end+"에 마감");

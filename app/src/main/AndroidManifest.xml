@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
-<!--    <uses-permission android:name="android.permission.SEND_SMS" />-->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <meta-data
         android:name="com.google.firebase.messaging.default_notification_icon"
@@ -25,13 +25,13 @@
         android:value="@string/vibrate" />
 
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_kcha"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_kcha_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.StatusBar"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"> <!--api28? 부터 http주소에 접근하려면 이거 해줘야됨. -->
         <activity android:name=".chat.SelectPeopleActivity"
             android:screenOrientation="portrait"></activity>
         <activity android:name=".chat.vote.VoteRegistrationActivity"
@@ -50,7 +50,7 @@
             android:screenOrientation="portrait"/>
         <activity
             android:name=".chat.ChatSetInfoActivity"
-            android:theme="@style/Theme.InfoDialog" />
+            android:theme="@style/Theme.PopUp" />
         <activity android:name=".admin.AdminActivity"
             android:screenOrientation="portrait"/>
         <activity android:name=".notice.NoticeActivity2"

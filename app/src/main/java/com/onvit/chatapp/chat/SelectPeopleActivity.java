@@ -20,6 +20,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -52,12 +53,12 @@ import java.util.Map;
 
 public class SelectPeopleActivity extends AppCompatActivity {
     List<User> userlist;
-    private Toolbar chatToolbar;
     private ValueEventListener valueEventListener;
     private List<User> selectUserList = new ArrayList<>();
     private Map<String, Object> messageReadUsers = new HashMap<>();
     private Map<String, Object> existUserGroupChat = new HashMap<>();
     private PeopleFragmentRecyclerAdapter pf = new PeopleFragmentRecyclerAdapter();
+    private PlusPeopleRecyclerAdapter plusPeopleRecyclerAdapter;
     private String uid;
     private List<User> pList = new ArrayList<>();
     private Button b;
@@ -65,17 +66,23 @@ public class SelectPeopleActivity extends AppCompatActivity {
     private DatabaseReference databaseReference;
     private Map<String, User> users = new HashMap<>();
     private String toRoom;
-
+    private RecyclerView plusRecyclerView;
+    private ImageView back_arrow;
+    private TextView chat_p_count;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_select_people);
         uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        chatToolbar = findViewById(R.id.chat_toolbar);
-        setSupportActionBar(chatToolbar);
-        ActionBar actionBar = getSupportActionBar();
-        actionBar.setTitle("인원 선택");
-        actionBar.setDisplayHomeAsUpEnabled(true);
+
+        back_arrow = findViewById(R.id.back_arrow);
+        back_arrow.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                onBackPressed();
+            }
+        });
+        chat_p_count = findViewById(R.id.chat_p_count);
         RecyclerView recyclerView = findViewById(R.id.peoplefragment_recyclerview);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(pf);
@@ -106,7 +113,7 @@ public class SelectPeopleActivity extends AppCompatActivity {
                                     return;
                                 }
                                 ChatModel chatModel = i.getValue(ChatModel.class);
-                                if (chatModel.id==0){
+                                if (chatModel.id == 0) {
                                     continue;
                                 }
                                 count.add(chatModel.id);
@@ -114,10 +121,10 @@ public class SelectPeopleActivity extends AppCompatActivity {
                             Collections.sort(count);
 
                             int c = 3;
-                            if(count.size()>0){
-                                c = count.get(count.size()-1)+1;
+                            if (count.size() > 0) {
+                                c = count.get(count.size() - 1) + 1;
                             }
-
+                            pList.add(users.get(uid));
                             ChatModel chatModel = new ChatModel();
                             LastChat lastChat = new LastChat();
                             lastChat.setChatName(chatName);
@@ -128,11 +135,11 @@ public class SelectPeopleActivity extends AppCompatActivity {
                                 chatModel.users.put(u.getUid(), false);
                                 existUser.put(u.getUid(), true);
                                 users.put(u.getUid(), 0);
-                                message = message + String.format("%s(%s)님, ",u.getUserName(), u.getHospital());
+                                message = message + String.format("%s(%s)님, ", u.getUserName(), u.getHospital());
                                 messageReadUsers.put(u.getUid(), true);
                                 existUserGroupChat.put(u.getUid(), true);
                             }
-                            final String message2 = message.substring(0, message.length()-2)+"이 채팅방에 참여하였습니다.";
+                            final String message2 = message.substring(0, message.length() - 2) + "이 채팅방에 참여하였습니다.";
                             chatModel.id = c;
                             lastChat.setExistUsers(existUser);
                             lastChat.setUsers(users);
@@ -178,27 +185,31 @@ public class SelectPeopleActivity extends AppCompatActivity {
             userlist = getIntent().getParcelableArrayListExtra("userlist");
             messageReadUsers = (Map<String, Object>) getIntent().getSerializableExtra("readUser");
 
-            for(User u : userlist){
-                messageReadUsers.put(u.getUid(),true);
+            for (User u : userlist) {
+                messageReadUsers.put(u.getUid(), true);
             }
             existUserGroupChat = (Map<String, Object>) getIntent().getSerializableExtra("existUser");
             toRoom = getIntent().getStringExtra("room");
             String chatName = getIntent().getStringExtra("room");
-            if(chatName.equals("normalChat")){
+            if (chatName.equals("normalChat")) {
                 chatName = "회원채팅방";
-            }else if(chatName.equals("officerChat")){
+            } else if (chatName.equals("officerChat")) {
                 chatName = "임원채팅방";
             }
             e.setText(chatName);
             e.setFocusable(false);
             e.setClickable(false);
-            b.setText("초대하기");
+            b.setText("초대");
             b.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    if(pList.size()==0){
+                        Utiles.customToast(SelectPeopleActivity.this,"초대할 인원을 선택하세요.").show();
+                        return;
+                    }
                     String message = "";
-                    if(users.get(uid)!=null){
-                        message = String.format("%s(%s)님이 ",users.get(uid).getUserName(),users.get(uid).getHospital());
+                    if (users.get(uid) != null) {
+                        message = String.format("%s(%s)님이 ", users.get(uid).getUserName(), users.get(uid).getHospital());
                     }
                     Map<String, Object> map = new HashMap<>();
                     Map<String, Object> map2 = new HashMap<>();
@@ -206,14 +217,11 @@ public class SelectPeopleActivity extends AppCompatActivity {
                         map.put("users/" + u.getUid(), false);
                         map2.put("existUsers/" + u.getUid(), true);
                         map2.put("users/" + u.getUid(), 0);
-                        if(u.getUid().equals(uid)){
-                            continue;
-                        }
-                        messageReadUsers.put(u.getUid(),true);
+                        messageReadUsers.put(u.getUid(), true);
                         existUserGroupChat.put(u.getUid(), true);
-                        message = message + String.format("%s(%s)님, ",u.getUserName(), u.getHospital());
+                        message = message + String.format("%s(%s)님, ", u.getUserName(), u.getHospital());
                     }
-                    message = message.substring(0, message.length()-2)+"을 초대하였습니다.";
+                    message = message.substring(0, message.length() - 2) + "을 초대하였습니다.";
                     databaseReference.child("groupChat").child(getIntent().getStringExtra("room")).updateChildren(map);
                     ChatModel.Comment comment = new ChatModel.Comment();
                     comment.uid = uid;
@@ -232,25 +240,21 @@ public class SelectPeopleActivity extends AppCompatActivity {
                 }
             });
         }
+
+        plusRecyclerView = findViewById(R.id.plus_p_recycler_view);
+        plusPeopleRecyclerAdapter = new PlusPeopleRecyclerAdapter();
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(SelectPeopleActivity.this, RecyclerView.HORIZONTAL, false);
+        linearLayoutManager.setReverseLayout(true);
+        linearLayoutManager.setStackFromEnd(true);
+        plusRecyclerView.setLayoutManager(linearLayoutManager);
+        plusRecyclerView.setAdapter(plusPeopleRecyclerAdapter);
     }
+
     //뒤로가기 눌렀을때
     @Override
     public void onBackPressed() {
         finish();
-        overridePendingTransition(R.anim.fromtop, R.anim.tobottom);//화면 사라지는 방향
-    }
-
-    //툴바에 뒤로가기 버튼
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                onBackPressed();
-                return true;
-
-            default:
-                return super.onOptionsItemSelected(item);
-        }
+        overridePendingTransition(R.anim.fromright, R.anim.toleft);
     }
 
     @Override
@@ -272,11 +276,9 @@ public class SelectPeopleActivity extends AppCompatActivity {
                     User user = null;
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         user = snapshot.getValue(User.class);
-                        if (uid.equals(user.getUid())) {
-                            pList.add(user);
+                        if(user.getUid().equals(uid)){
                             continue;
                         }
-
                         selectUserList.add(user);
                     }
                     if (getIntent().getStringExtra("plus") != null) {
@@ -306,20 +308,16 @@ public class SelectPeopleActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull final CustomViewHolder holder, final int position) {
-            Log.d("홀더붙는순서(연락처)", position + "");
             //position0번 부터 붙음
             holder.check.setVisibility(View.VISIBLE);
             holder.check.setChecked(false);
 
-            if(pList.contains(selectUserList.get(position))){
+            if (pList.contains(selectUserList.get(position))) {
                 holder.check.setChecked(true);
             }
 
             holder.lineText.setVisibility(View.GONE);
 
-            if (position == 1) {// 본인이랑 다음사람이랑 구분선.
-                holder.lineText.setVisibility(View.VISIBLE);
-            }
             //사진에 곡률넣음.
             if (selectUserList.get(position).getUserProfileImageUrl().equals("noImg")) {
                 Glide.with(holder.itemView.getContext()).load(R.drawable.standard_profile).apply(new RequestOptions().centerCrop()).into(holder.imageView);
@@ -334,13 +332,45 @@ public class SelectPeopleActivity extends AppCompatActivity {
 
             holder.textView_hospital.setText("[" + selectUserList.get(position).getHospital() + "]");
 
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    if (holder.check.isChecked()) {
+                        holder.check.setChecked(false);
+                        pList.remove(selectUserList.get(position));
+                        plusPeopleRecyclerAdapter.notifyDataSetChanged();
+                        chat_p_count.setText(pList.size()+"명");
+                        if(pList.size()==0){
+                            chat_p_count.setText("");
+                            plusRecyclerView.setVisibility(View.GONE);
+                        }
+                    } else {
+                        holder.check.setChecked(true);
+                        plusRecyclerView.setVisibility(View.VISIBLE);
+                        pList.add(selectUserList.get(position));
+                        plusPeopleRecyclerAdapter.notifyDataSetChanged();
+                        plusRecyclerView.scrollToPosition(plusPeopleRecyclerAdapter.getItemCount()-1);
+                        chat_p_count.setText(pList.size()+"명");
+                    }
+                }
+            });
             holder.check.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     if (holder.check.isChecked()) {
+                        plusRecyclerView.setVisibility(View.VISIBLE);
                         pList.add(selectUserList.get(position));
+                        plusPeopleRecyclerAdapter.notifyDataSetChanged();
+                        plusRecyclerView.scrollToPosition(plusPeopleRecyclerAdapter.getItemCount()-1);
+                        chat_p_count.setText(pList.size()+"명");
                     } else {
                         pList.remove(selectUserList.get(position));
+                        plusPeopleRecyclerAdapter.notifyDataSetChanged();
+                        chat_p_count.setText(pList.size()+"명");
+                        if(pList.size()==0){
+                            chat_p_count.setText("");
+                            plusRecyclerView.setVisibility(View.GONE);
+                        }
                     }
                 }
             });
@@ -366,6 +396,71 @@ public class SelectPeopleActivity extends AppCompatActivity {
                 textView_hospital = view.findViewById(R.id.frienditem_textview_hospital);
                 lineText = view.findViewById(R.id.line_text);
                 check = view.findViewById(R.id.check);
+            }
+        }
+    }
+
+
+
+    class PlusPeopleRecyclerAdapter extends RecyclerView.Adapter<PlusPeopleRecyclerAdapter.CustomViewHolder> {
+
+        public PlusPeopleRecyclerAdapter() {
+
+        }
+
+        @NonNull
+        @Override
+        public CustomViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_plus_people, parent, false);
+            return new CustomViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull final CustomViewHolder holder, final int position) {
+            String uri = pList.get(position).getUserProfileImageUrl();
+            if (uri.equals("noImg")) {
+                Glide.with(holder.itemView.getContext()).load(R.drawable.standard_profile).apply(new RequestOptions().centerCrop()).into(holder.profile);
+            } else {
+                Glide.with(holder.itemView.getContext()).load(uri).placeholder(R.drawable.standard_profile)
+                        .apply(new RequestOptions().centerCrop()).into(holder.profile);
+            }
+            GradientDrawable gradientDrawable = (GradientDrawable) SelectPeopleActivity.this.getDrawable(R.drawable.radius);
+            holder.profile.setBackground(gradientDrawable);
+            holder.profile.setClipToOutline(true);
+
+            holder.name.setText(pList.get(position).getUserName());
+            holder.hospital.setText(pList.get(position).getHospital());
+            holder.itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    pList.remove(position);
+                    notifyDataSetChanged();
+                    chat_p_count.setText(pList.size()+"명");
+                    if(pList.size()==0){
+                        chat_p_count.setText("");
+                        plusRecyclerView.setVisibility(View.GONE);
+                    }
+                    pf.notifyDataSetChanged();
+                }
+            });
+        }
+
+        @Override
+        public int getItemCount() {
+            return pList.size();
+        }
+
+
+        private class CustomViewHolder extends RecyclerView.ViewHolder {
+            ImageView cancel, profile;
+            TextView name, hospital;
+
+            public CustomViewHolder(View v) {
+                super(v);
+                cancel = v.findViewById(R.id.cancel_view);
+                profile = v.findViewById(R.id.image_view_profile);
+                name = v.findViewById(R.id.text_view_name);
+                hospital = v.findViewById(R.id.text_view_hospital);
             }
         }
     }

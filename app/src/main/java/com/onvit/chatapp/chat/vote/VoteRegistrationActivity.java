@@ -228,7 +228,7 @@ public class VoteRegistrationActivity extends AppCompatActivity {
                                 if (c.trim().equals("")) {
                                     continue;
                                 }
-                                listMap.put(c, userList);
+                                listMap.put("a" + c, userList);
                             }
                         }
                         if (listMap.size() == 0) {

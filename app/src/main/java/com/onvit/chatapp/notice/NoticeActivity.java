@@ -617,12 +617,10 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
 
         @Override
         public void onBindViewHolder(@NonNull final NoticeViewHolder holder, final int position) {
-            Log.d("이미지", position + "");
 
             switch (noticeName) {
                 case "공지사항 등록":
                 case "공지사항 수정":
-                    holder.text.setText("클릭하여 삭제");
                     holder.itemView.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View view) {
@@ -640,6 +638,7 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
             GradientDrawable gradientDrawable = (GradientDrawable) NoticeActivity.this.getDrawable(R.drawable.radius);
             holder.imageView.setBackground(gradientDrawable);
             holder.imageView.setClipToOutline(true);
+            holder.cancel_view.bringToFront();
         }
 
         @Override
@@ -649,14 +648,12 @@ public class NoticeActivity extends AppCompatActivity implements View.OnClickLis
 
 
         private class NoticeViewHolder extends RecyclerView.ViewHolder {
-            private TextView text;
-            private ImageView imageView;
+            private ImageView imageView,cancel_view;
 
             NoticeViewHolder(View itemView) {
                 super(itemView);
-                text = itemView.findViewById(R.id.layout_img_text);
                 imageView = itemView.findViewById(R.id.info_img);
-
+                cancel_view = itemView.findViewById(R.id.cancel_view);
             }
         }
     }
