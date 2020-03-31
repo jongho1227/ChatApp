@@ -11,6 +11,7 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.WindowManager;
@@ -65,6 +66,28 @@ public class SplashActivity extends AppCompatActivity {
         mFirebaseRemoteConfig.setConfigSettingsAsync(configSettings);
         //다 메인으로 옮겨서 실행.
 
+        File path = Environment.getExternalStorageDirectory();
+        File dir = new File(path + "/KCHA");
+        if(dir.exists()){
+            Log.d("경로", "dd");
+            String p = dir.getAbsolutePath();
+            setDirEmpty(p);
+        }
+    }
+    public void setDirEmpty (String dirName){
+        File dir = new File(dirName);
+        File[] childFileList = dir.listFiles();
+        if (dir.exists()) {
+            for (File childFile : childFileList) {
+                if (childFile.isDirectory()) {
+                    setDirEmpty(childFile.getAbsolutePath()); //하위 디렉토리
+                    Log.d("경로", childFile.getAbsolutePath());
+                } else {
+                    childFile.delete(); //하위 파일
+                }
+            }
+            dir.delete();
+        }
     }
 
     @Override

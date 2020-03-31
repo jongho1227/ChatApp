@@ -100,6 +100,7 @@ public class ChatFragment extends Fragment {
                 if (btn.isChecked()) {
                     btn.setBackgroundDrawable(getResources().getDrawable(R.drawable.ic_notifications_vibrate));
                     activity.getSharedPreferences(activity.getPackageName(), Context.MODE_PRIVATE).edit().putInt("vibrate", 0).apply();
+                    //앱에 진동주기
                     Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
                     vibrator.vibrate(700);
                     Utiles.customToast(getActivity(), "앱의 알림이 설정되었습니다.").show();

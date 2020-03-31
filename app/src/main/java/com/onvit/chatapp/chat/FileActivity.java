@@ -180,7 +180,7 @@ public class FileActivity extends AppCompatActivity {
                         } else {
                             //외부앱 파일 접근할시 fileprovider써야함. 외부sd저장소 등 접근하려면 file_path.xml에 root설정.
                             File path = Environment.getExternalStorageDirectory();
-                            File dir = new File(path + "/KCHA/DownloadFile");
+                            File dir = new File(path + "/대한지역병원협의회/DownloadFile");
                             dir.mkdirs();
                             String filename = fileName[0];
                             final File file = new File(dir, filename);

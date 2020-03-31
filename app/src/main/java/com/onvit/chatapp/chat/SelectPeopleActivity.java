@@ -244,6 +244,7 @@ public class SelectPeopleActivity extends AppCompatActivity {
         plusRecyclerView = findViewById(R.id.plus_p_recycler_view);
         plusPeopleRecyclerAdapter = new PlusPeopleRecyclerAdapter();
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(SelectPeopleActivity.this, RecyclerView.HORIZONTAL, false);
+        //리사이클러뷰 역정렬
         linearLayoutManager.setReverseLayout(true);
         linearLayoutManager.setStackFromEnd(true);
         plusRecyclerView.setLayoutManager(linearLayoutManager);

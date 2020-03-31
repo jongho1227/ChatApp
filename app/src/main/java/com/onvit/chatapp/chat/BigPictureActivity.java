@@ -209,7 +209,7 @@ public class BigPictureActivity extends AppCompatActivity implements View.OnClic
                 Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
                 String time = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.KOREA).format(System.currentTimeMillis());
                 File path = Environment.getExternalStorageDirectory();
-                File dir = new File(path + "/KCHA/DownloadImg");
+                File dir = new File(path + "/대한지역병원협의회/DownloadImg");
                 dir.mkdirs();
                 String imagename = time + ".PNG";
                 File file = new File(dir, imagename);
