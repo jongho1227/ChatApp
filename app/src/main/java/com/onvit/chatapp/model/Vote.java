@@ -11,6 +11,15 @@ public class Vote {
     private String registrant;
     private String key;
     private List<User> list;
+    private String end;
+
+    public String getEnd() {
+        return end;
+    }
+
+    public void setEnd(String end) {
+        this.end = end;
+    }
 
     public List<User> getList() {
         return list;

@@ -50,6 +50,8 @@ public class VoteActivity extends AppCompatActivity {
     private ImageView back;
     private ValueEventListener voteListener;
     ArrayList<User> userList;
+    private List<ToggleButton> ranking = new ArrayList<>();
+    private List<ToggleButton> ranking2 = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -68,6 +70,7 @@ public class VoteActivity extends AppCompatActivity {
                 Vote vote = dataSnapshot.getValue(Vote.class);
                 TextView textView = findViewById(R.id.vote_title);
                 TextView doVote = findViewById(R.id.do_vote);
+                TextView voteEnd = findViewById(R.id.vote_end);
                 TextView deadline = findViewById(R.id.deadline);
                 TextView detail = findViewById(R.id.detail);
                 final Date d = new Date(vote.getDeadline());
@@ -113,6 +116,7 @@ public class VoteActivity extends AppCompatActivity {
                     }
                     detailUser.put(key, user);
                     btn.setText(key.substring(1)+"("+count+"명)");
+                    btn.setTag(count);
                     btn.setTextOff(key.substring(1)+"("+count+"명)");
                     btn.setTextOn(key.substring(1)+"("+count+"명)");
                     btn.setOnClickListener(new View.OnClickListener() {
@@ -134,14 +138,14 @@ public class VoteActivity extends AppCompatActivity {
                         btn.setFocusable(false);
                     }
                     vote_layout.addView(btn);
+                    ranking.add(btn);
                 }
+
 
                 detail.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        Log.d("유저정보", detailUser.toString());
                         Intent intent = new Intent(VoteActivity.this, VoteDetailActivity.class);
-                        Log.d("참여", join.toString());
                         intent.putExtra("join", (Serializable) join);
                         intent.putExtra("detail", (Serializable) detailUser);
                         intent.putExtra("cUser", (Serializable) cUser);
@@ -153,6 +157,24 @@ public class VoteActivity extends AppCompatActivity {
 
                 if(flag.equals("over")){
                     doVote.setText("투표결과");
+                    voteEnd.setText("종료된 투표입니다.");
+                    detail.setText("투표 결과 상세 보기");
+                    for(int i = 0; i<ranking.size(); i++){
+                        for(int j = i+1; j<ranking.size(); j++){
+                            if((int)ranking.get(i).getTag()<(int)ranking.get(j).getTag()){
+                                ToggleButton r = ranking.get(i);
+                                ToggleButton r2 = ranking.get(j);
+                                ranking.add(i,r2);
+                                ranking.remove(i+1);
+                                ranking.add(j,r);
+                                ranking.remove(j+1);
+                            }
+                        }
+                    }
+                    vote_layout.removeAllViews();
+                    for(ToggleButton b : ranking){
+                        vote_layout.addView(b);
+                    }
                 }else{
                     doVote.setOnClickListener(new View.OnClickListener() {
                         @Override

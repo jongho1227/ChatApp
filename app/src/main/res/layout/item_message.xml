@@ -163,7 +163,7 @@
                                 android:textStyle="bold"
                                 android:layout_marginBottom="15dp"
                                 android:textColor="@color/black"
-                                android:maxLines="2"
+                                android:maxLines="3"
                                 android:ellipsize="end"/>
                             <TextView
                                 android:id="@+id/go_to_vote"
@@ -279,6 +279,7 @@
                         android:textColor="@color/black"
                         android:textStyle="bold"
                         android:visibility="gone"/>
+
                 </LinearLayout>
                 <LinearLayout
                     android:id="@+id/messageItem_Linearlayout_othertime"

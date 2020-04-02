@@ -31,59 +31,74 @@
         android:roundIcon="@mipmap/ic_kcha_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.StatusBar"
-        android:usesCleartextTraffic="true"> <!--api28? 부터 http주소에 접근하려면 이거 해줘야됨. -->
-        <activity android:name=".chat.SelectPeopleActivity"
-            android:screenOrientation="portrait"></activity>
-        <activity android:name=".chat.vote.VoteRegistrationActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".chat.vote.VoteListActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".chat.vote.VoteDetailActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".chat.ImgActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".admin.InviteActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".chat.vote.VoteActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".chat.FileActivity"
-            android:screenOrientation="portrait"/>
+        android:usesCleartextTraffic="true">
+        <activity android:name=".chat.ViewAllActivity"></activity>
+        <!-- api28? 부터 http주소에 접근하려면 이거 해줘야됨. -->
+        <activity
+            android:name=".chat.SelectPeopleActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.vote.VoteRegistrationActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.vote.VoteListActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.vote.VoteDetailActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.ImgActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".admin.InviteActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.vote.VoteActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.FileActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".chat.ChatSetInfoActivity"
             android:theme="@style/Theme.PopUp" />
-        <activity android:name=".admin.AdminActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".notice.NoticeActivity2"
-            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".admin.AdminActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".notice.NoticeActivity2"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".notice.NoticeActivity"
-            android:windowSoftInputMode="adjustResize"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".certification.CertificateActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".ad.ADActivity"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".chat.BigPictureActivity"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".certification.CertificateActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ad.ADActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".chat.BigPictureActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".contact.PersonInfoActivity"
-            android:theme="@style/AppTheme.StatusBar"
-            android:screenOrientation="portrait"/>
-        <activity android:name=".chat.SelectGroupChatActivity"
-            android:screenOrientation="portrait"/>
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.StatusBar" />
+        <activity
+            android:name=".chat.SelectGroupChatActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".chat.GroupMessageActivity"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme.chatStatusBar"
-            android:windowSoftInputMode="adjustResize"
-            android:screenOrientation="portrait"/>
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".MainActivity"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.StatusBar"
-            android:windowSoftInputMode="adjustResize" >
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="GroupMessage" />
-
 
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
@@ -96,7 +111,8 @@
             android:name=".LoginActivity"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize" />
-        <activity android:name=".SplashActivity"
+        <activity
+            android:name=".SplashActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
